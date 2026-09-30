@@ -42,6 +42,9 @@ on:
         type: boolean
         default: true
   push:
+    # branches, not tags. Creating a release makes a tag, and without this
+    # restriction that tag push starts a second 20 minute build for no reason.
+    branches: [main]
     paths:
       - '.github/workflows/build-kernel.yml'
       - 'kernel-configs/**'
