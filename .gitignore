@@ -1,0 +1,17 @@
+# Research scratch: upstream Droidspaces-OSS checkout and the Android kernel
+# tutorials checkout. Both are large and neither belongs in this repo.
+_repo/
+_tutorial/
+
+# Build output, if anyone ever builds here directly instead of in CI.
+/kernel/
+/out/
+*.o
+*.ko
+
+# Editor and OS noise.
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db

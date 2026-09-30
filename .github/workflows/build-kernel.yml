@@ -1,0 +1,200 @@
+name: Build Droidspaces + KernelSU-Next kernel
+
+# Builds an arm64 GKI Image for zorn (Redmi K80 / POCO F7 Pro) with the
+# Droidspaces kABI patch and config set, plus KernelSU-Next, and packages it as
+# a flashable AnyKernel3 zip.
+#
+# Source tree note: the official MiCode/Xiaomi_Kernel_OpenSource@bsp-zorn-v-oss
+# drop is kernel 6.1.68 and has no build/ directory or tools/bazel, so it needs
+# a full Kleaf workspace (CodeLinaro prebuilts, repo manifest, Bazel) to build.
+# This workflow uses the LineageOS zorn tree instead, which is a plain-make tree
+# on 6.1.176 and keeps the same -android14-11 KMI tag, so `make` alone works.
+
+on:
+  workflow_dispatch:
+    inputs:
+      kernel_repo:
+        description: Kernel source repository
+        required: false
+        default: https://github.com/cnmrlin/android_kernel_xiaomi_sm8650.git
+      kernel_branch:
+        description: Kernel source branch
+        required: false
+        default: lineage-24.0
+      root_solution:
+        description: Root solution to integrate
+        required: false
+        type: choice
+        options: [ksu-next, none]
+        default: ksu-next
+      ksu_ref:
+        description: KernelSU-Next ref (dev branch or a tag like v3.4.0)
+        required: false
+        default: dev
+      remove_protected_exports:
+        description: Remove the GKI protected-exports list (only if vendor modules fail with EACCES)
+        required: false
+        type: boolean
+        default: false
+  push:
+    paths:
+      - '.github/workflows/build-kernel.yml'
+      - 'kernel-configs/**'
+      - 'patches/**'
+      - 'scripts/**'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 150
+
+    env:
+      KERNEL_REPO: ${{ inputs.kernel_repo || 'https://github.com/cnmrlin/android_kernel_xiaomi_sm8650.git' }}
+      KERNEL_BRANCH: ${{ inputs.kernel_branch || 'lineage-24.0' }}
+      ROOT_SOLUTION: ${{ inputs.root_solution || 'ksu-next' }}
+      KSU_REF: ${{ inputs.ksu_ref || 'dev' }}
+      DEVICE_CODENAME: zorn
+      # Pinned to the tree's own build.config.constants CLANG_VERSION for
+      # android14-6.1, so the compiler matches what the kernel was written for.
+      CLANG_VERSION: r487747c
+
+    steps:
+      - name: Checkout build config
+        uses: actions/checkout@v4
+
+      - name: Free disk space
+        run: |
+          # A kernel build plus toolchain needs roughly 40 GB. The runner ships
+          # with large preinstalled SDKs that this job never uses.
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc \
+                      /opt/hostedtoolcache/CodeQL /usr/local/share/boost
+          sudo apt-get clean
+          df -h /
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq \
+            build-essential bc bison flex patch pkg-config git curl tar xz-utils \
+            zip unzip cpio rsync kmod perl python3 python-is-python3 \
+            libssl-dev libelf-dev libncurses-dev zlib1g-dev libyaml-dev \
+            lz4 zstd device-tree-compiler
+          # pahole (dwarves) is needed for BTF; install separately because some
+          # Ubuntu images have it version-pinned.
+          sudo apt-get install -y -qq dwarves || true
+
+      - name: Fetch clang toolchain
+        run: |
+          # AOSP serves empty placeholder archives with HTTP 200 for versions
+          # that do not exist, so check for a real binary rather than the exit
+          # code, otherwise the build fails later with "clang: not found".
+          URL="https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/main-kernel-build-2024/clang-${CLANG_VERSION}.tar.gz"
+          echo "Downloading clang-${CLANG_VERSION}"
+          curl -LSsf --retry 3 -o clang.tar.gz "$URL"
+          mkdir -p "$HOME/clang"
+          tar -xzf clang.tar.gz -C "$HOME/clang"
+          rm -f clang.tar.gz
+          [ -x "$HOME/clang/bin/clang" ] || {
+            echo "::error::clang-${CLANG_VERSION} archive is empty or not executable"
+            exit 1
+          }
+          "$HOME/clang/bin/clang" --version
+          echo "$HOME/clang/bin" >>"$GITHUB_PATH"
+
+      - name: Clone kernel source
+        run: |
+          # --depth 1 only. These trees are several GB and the full history is
+          # of no use to a build.
+          git clone --depth 1 --branch "$KERNEL_BRANCH" "$KERNEL_REPO" kernel
+          cd kernel
+          echo "Kernel version: $(make kernelversion)"
+          # Guard the whole config strategy: the kABI patch and the fragment
+          # target 6.1 specifically.
+          make kernelversion | grep -q '^6\.1\.' || {
+            echo "::error::Expected a 6.1 kernel, got $(make kernelversion)"
+            exit 1
+          }
+
+      - name: Apply Droidspaces kABI patch
+        run: |
+          # The patch has to land before the build, and the script refuses to
+          # enable SYSVIPC if it did not apply.
+          cp -v patches/001-gki-sysvipc-kabi.patch "$RUNNER_TEMP/"
+          cd kernel
+          git config user.email "ci@localhost"
+          git config user.name "CI"
+          # git apply wants a real work tree state; these trees are clean after
+          # a fresh shallow clone.
+          if git apply --check "$RUNNER_TEMP/001-gki-sysvipc-kabi.patch"; then
+            git apply "$RUNNER_TEMP/001-gki-sysvipc-kabi.patch"
+            echo "Patch applied"
+          else
+            echo "::error::kABI patch did not apply to this tree."
+            echo "If it bootloops on device, the 1_2_3 or 3_4_5 variant from"
+            echo "Droidspaces-OSS Documentation/resources/kernel-patches/GKI/below-kernel-6.12/"
+            echo "occupies different ABI reserve slots and may be the right one."
+            exit 1
+          fi
+          grep -q 'ANDROID_KABI_USE(6, struct sysv_sem sysvsem)' include/linux/sched.h \
+            || { echo "::error::patch verification failed"; exit 1; }
+          echo "Verified sysvsem/sysvshm are in the KABI reserve slots"
+
+      - name: Optionally drop GKI protected exports
+        if: ${{ inputs.remove_protected_exports }}
+        run: |
+          # CONFIG_MODULE_SIG_PROTECT enforces a separate allowlist from signing.
+          # A stock vendor module can fail with -EACCES if the locally generated
+          # lists differ from Xiaomi's. Only needed if Wi-Fi/BT break.
+          cd kernel
+          ls android/abi_gki_protected_exports_* 2>/dev/null || true
+          rm -fv android/abi_gki_protected_exports_*
+
+      - name: Build kernel
+        env:
+          CONFIG_FRAGMENT: ${{ github.workspace }}/kernel-configs/droidspaces-gki.config
+          KERNEL_ROOT: ${{ github.workspace }}/kernel
+          OUT_DIR: ${{ github.workspace }}/kernel/out
+          KABI_PATCH_FILE: ${{ runner.temp }}/001-gki-sysvipc-kabi.patch
+        run: |
+          chmod +x scripts/build-kernel.sh
+          KERNEL_ROOT="$KERNEL_ROOT" OUT_DIR="$OUT_DIR" \
+          CONFIG_FRAGMENT="$CONFIG_FRAGMENT" \
+          ROOT_SOLUTION="$ROOT_SOLUTION" KSU_REF="$KSU_REF" \
+          KABI_PATCH_FILE="$KABI_PATCH_FILE" \
+          bash scripts/build-kernel.sh
+
+      - name: Package AnyKernel3 zip
+        env:
+          IMAGE: ${{ github.workspace }}/kernel/out/arch/arm64/boot/Image
+          OUT_ZIP: ${{ github.workspace }}/out/AnyKernel3_zorn_droidspaces_ksu-next.zip
+        run: |
+          chmod +x scripts/package-anykernel3.sh
+          IMAGE="$IMAGE" OUT_ZIP="$OUT_ZIP" \
+          DEVICE_CODENAME="$DEVICE_CODENAME" \
+          KERNEL_STRING="Droidspaces + KernelSU-Next (6.1)" \
+          bash scripts/package-anykernel3.sh
+
+      - name: Upload kernel Image
+        uses: actions/upload-artifact@v4
+        with:
+          name: Image-zorn-droidspaces-ksu-next
+          path: kernel/out/arch/arm64/boot/Image
+          if-no-files-found: error
+
+      - name: Upload AnyKernel3 zip
+        uses: actions/upload-artifact@v4
+        with:
+          name: AnyKernel3-zorn-droidspaces-ksu-next
+          path: out/AnyKernel3_zorn_droidspaces_ksu-next.zip
+          if-no-files-found: error
+
+      - name: Upload build config
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: kernel-config-zorn
+          path: kernel/out/.config
+          if-no-files-found: warn
