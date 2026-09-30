@@ -79,17 +79,20 @@ sed -i -E "s|^do\.systemless=.*|do.systemless=0|" "$AK3_DIR/anykernel.sh"
 # WildKernels GKI fork still uses lowercase `block=`/`is_slot_device=` (it keeps
 # the backwards-compat aliases), while osm0sis master deleted those aliases and
 # uses uppercase only. Match case-insensitively so either fork lands correctly.
-# Upstream master's template hardcodes an omap by-name path and
-# IS_SLOT_DEVICE=0, which on a zorn (A/B, dynamic partitions) either fails to
-# find the partition or writes to the inactive slot. `auto` makes AnyKernel3
-# resolve boot via by-name/bootdevice and append _a/_b itself.
-sed -i -E "s|^[Bb][Ll][Oo][Cc][Kk]=.*|block=auto;|" "$AK3_DIR/anykernel.sh"
+#
+# block=boot, not auto. On a GKI device both `boot` and `init_boot` exist, and
+# init_boot deliberately carries no kernel (HEADER_VER 4 with KERNEL_SZ 0) and is
+# only ~8 MB. Selecting it produces
+#     New image larger than target partition. Aborting...
+# because the kernel is written into a ramdisk-only partition. This kernel
+# belongs in `boot`, so say so instead of letting detection guess.
+sed -i -E "s|^[Bb][Ll][Oo][Cc][Kk]=.*|block=boot;|" "$AK3_DIR/anykernel.sh"
 sed -i -E "s|^[Ii][Ss]_[Ss][Ll][Oo][Tt]_[Dd][Ee][Vv][Ii][Cc][Ee]=.*|is_slot_device=auto;|" "$AK3_DIR/anykernel.sh"
 
 # Fail loudly rather than shipping a zip that flashes the wrong partition.
 # Verify by value, not by spelling, so both forks pass.
-if ! grep -qiE '^[Bb][Ll][Oo][Cc][Kk]=(auto|boot);?' "$AK3_DIR/anykernel.sh"; then
-    die "BLOCK is not auto/boot in anykernel.sh, the zip would target the wrong partition"
+if ! grep -qiE '^[Bb][Ll][Oo][Cc][Kk]=boot;?' "$AK3_DIR/anykernel.sh"; then
+    die "block is not 'boot' in anykernel.sh, the zip could target init_boot"
 fi
 if ! grep -qiE '^[Ii][Ss]_[Ss][Ll][Oo][Tt]_[Dd][Ee][Vv][Ii][Cc][Ee]=auto;?' "$AK3_DIR/anykernel.sh"; then
     die "IS_SLOT_DEVICE is not auto, an A/B device would get the wrong slot"
