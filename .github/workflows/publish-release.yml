@@ -1,0 +1,158 @@
+name: Publish release from an existing build
+
+# Moves the artifacts of an already-finished build into the GitHub release.
+#
+# Why this exists as its own workflow: the build job's release step can only
+# reach artifacts produced in the same run, so using it would mean compiling for
+# another 20 minutes just to publish a file that already exists. Artifacts from
+# a past run stay on GitHub's storage, so a runner can fetch them directly with
+# the run id. The bytes never touch the user's machine.
+#
+# Manual only. It is a publishing action, not a build.
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: Run id whose artifacts should be published
+        required: true
+      tag:
+        description: Release tag to publish into
+        required: false
+        default: droidspaces-ksu-next-6.1-zorn
+      create_if_missing:
+        description: Create the release if the tag does not exist yet
+        required: false
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Download artifacts from the build run
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          echo "Fetching artifacts from run ${{ inputs.run_id }}"
+          gh run view "${{ inputs.run_id }}" --repo "$GITHUB_REPOSITORY" \
+            --json displayTitle,conclusion,headSha \
+            --jq '"  build: \(.displayTitle)\n  conclusion: \(.conclusion)\n  commit: \(.headSha)"'
+
+          mkdir -p dist
+          # --repo plus an explicit run id is what lets this reach a run other
+          # than the current one.
+          gh run download "${{ inputs.run_id }}" \
+            --repo "$GITHUB_REPOSITORY" \
+            --dir dist
+
+          echo "Downloaded:"
+          find dist -type f -printf '  %p  %s bytes\n'
+
+      - name: Locate the assets
+        id: assets
+        run: |
+          set -euo pipefail
+          # The AnyKernel3 zip keeps its name; the raw Image has no extension, so
+          # match on the basename. Fail here rather than publishing nothing.
+          ZIP="$(find dist -type f -name '*AnyKernel3*.zip' | head -1)"
+          IMG="$(find dist -type f -name 'Image' | head -1)"
+          [ -n "$ZIP" ] || { echo "::error::no AnyKernel3 zip in the artifacts"; exit 1; }
+          [ -n "$IMG" ] || { echo "::error::no kernel Image in the artifacts"; exit 1; }
+          echo "zip=$ZIP" >>"$GITHUB_OUTPUT"
+          echo "img=$IMG" >>"$GITHUB_OUTPUT"
+          echo "zip_name=$(basename "$ZIP")" >>"$GITHUB_OUTPUT"
+
+      - name: Publish to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+          ZIP: ${{ steps.assets.outputs.zip }}
+          IMG: ${{ steps.assets.outputs.img }}
+          RUN_ID: ${{ inputs.run_id }}
+        run: |
+          set -euo pipefail
+
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Release $TAG exists; uploading with --clobber"
+            gh release upload "$TAG" --repo "$GITHUB_REPOSITORY" --clobber "$ZIP" "$IMG"
+          else
+            if [ "${{ inputs.create_if_missing }}" != "true" ]; then
+              echo "::error::release $TAG does not exist and create_if_missing is false"
+              exit 1
+            fi
+            cat >notes.md <<EOF
+          GKI 6.1 kernel for the Redmi K80 / POCO F7 Pro (\`zorn\`), built for
+          [Droidspaces](https://github.com/ravindu644/Droidspaces-OSS) containers
+          with KernelSU-Next for root.
+
+          ## Flash this
+
+          The AnyKernel3 zip. It replaces only \`boot.img\`, so the stock
+          \`vendor_dlkm\` modules stay untouched. Extract your stock \`boot.img\`
+          before flashing so you can restore it.
+
+          | | |
+          | --- | --- |
+          | Kernel | Linux 6.1, \`android14-6.1\`, arm64 |
+          | KMI | generation 11, matches \`6.1.x-android14-11-*\` |
+          | Source | \`cnmrlin/android_kernel_xiaomi_sm8650\` @ \`lineage-24.0\` |
+          | Toolchain | clang-r487747c (the version the tree pins) |
+          | Root | KernelSU-Next, kprobes mode |
+
+          Built by GitHub Actions, run [$RUN_ID](https://github.com/$GITHUB_REPOSITORY/actions/runs/$RUN_ID).
+          The build fails rather than shipping a kernel Droidspaces would reject,
+          so CONFIG_SYSVIPC, CONFIG_IPC_NS, CONFIG_PID_NS, CONFIG_UTS_NS,
+          CONFIG_DEVTMPFS and CONFIG_KSU were verified present before compiling.
+
+          ## The kABI patch
+
+          Enabling \`CONFIG_SYSVIPC\` naively moves fields inside \`struct task_struct\`,
+          which shifts the offsets Xiaomi's prebuilt vendor modules were compiled
+          against and bootloops the device. The patch parks \`sysvsem\`/\`sysvshm\` in the
+          \`ANDROID_KABI_RESERVE\` slots instead, so no offset moves. This tree already
+          uses slots 1-3, so the build picks the first free triple (6/7/8) by
+          scanning the file and verifies the result.
+
+          ## After booting
+
+          \`\`\`bash
+          su -c droidspaces check     # namespaces, cgroups, devtmpfs
+          su -c ksu --version         # or open the KernelSU-Next manager
+          \`\`\`
+
+          \`droidspaces check\` calls \`unshare()\` against the running kernel instead of
+          reading flags, so it reports the truth.
+
+          ## Before flashing
+
+          Confirm \`uname -r\` reports \`6.1.x-android14-11-*\`. A KMI mismatch is an
+          instant bootloop. If it does bootloop, restore the stock \`boot.img\` over
+          fastboot.
+
+          ## Risks
+
+          Flashing a kernel can brick the device. Everything here is built from
+          public sources and is reproducible from this repo.
+          EOF
+            gh release create "$TAG" --repo "$GITHUB_REPOSITORY" \
+              --title "Droidspaces + KernelSU-Next (6.1, zorn)" \
+              --notes-file notes.md \
+              "$ZIP" "$IMG"
+          fi
+
+      - name: Report
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          echo "=== release assets ==="
+          gh release view "$TAG" --repo "$GITHUB_REPOSITORY" \
+            --json url,assets \
+            --jq '.url, (.assets[] | "  \(.name)  \(.size) bytes  \(.url)")'
