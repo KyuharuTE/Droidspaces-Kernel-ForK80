@@ -96,12 +96,32 @@ jobs:
 
       - name: Fetch clang toolchain
         run: |
-          # AOSP serves empty placeholder archives with HTTP 200 for versions
-          # that do not exist, so check for a real binary rather than the exit
-          # code, otherwise the build fails later with "clang: not found".
-          URL="https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/main-kernel-build-2024/clang-${CLANG_VERSION}.tar.gz"
-          echo "Downloading clang-${CLANG_VERSION}"
-          curl -LSsf --retry 3 -o clang.tar.gz "$URL"
+          # AOSP serves these from per-year branches and each branch holds only
+          # a few clang versions, so the branch and the version have to match.
+          # clang-r487747c (the version pinned by this tree's
+          # build.config.constants for android14-6.1) lives on
+          # main-kernel-build-2023, NOT on -2024, which only has r510928.
+          # A wrong pairing returns HTTP 400 and curl exits 22, which is how the
+          # first two runs died: a bare "exit code 22" with no useful log.
+          # AOSP also serves an empty placeholder for some refs, so the binary
+          # is checked for executability rather than trusting the exit code.
+          BASE="https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads"
+          for ref in main-kernel-build-2023 main-kernel-build-2024; do
+            url="$BASE/$ref/clang-${CLANG_VERSION}.tar.gz"
+            echo "Trying $url"
+            if curl -LSsf --retry 3 -o clang.tar.gz "$url" && tar -tzf clang.tar.gz >/dev/null 2>&1; then
+              echo "Downloaded from $ref"
+              break
+            fi
+            echo "  not available on $ref"
+            rm -f clang.tar.gz
+          done
+
+          [ -f clang.tar.gz ] || {
+            echo "::error::Could not download clang-${CLANG_VERSION} from any known ref"
+            exit 1
+          }
+
           mkdir -p "$HOME/clang"
           tar -xzf clang.tar.gz -C "$HOME/clang"
           rm -f clang.tar.gz
