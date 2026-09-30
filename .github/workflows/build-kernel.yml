@@ -76,15 +76,23 @@ jobs:
 
       - name: Install build dependencies
         run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq \
+          sudo apt-get update
+          # One list, installed in one transaction. pahole/dwarves is required
+          # for BTF generation and is NOT in the runner image's preinstalled
+          # set, so it is not optional. Installing it in a separate
+          # `apt-get install ... || true` step is what broke the first run:
+          # a failing apt returns 0 through the pipeline, so `set -e` killed the
+          # script with a bare exit 22 and no visible error.
+          sudo apt-get install -y \
             build-essential bc bison flex patch pkg-config git curl tar xz-utils \
             zip unzip cpio rsync kmod perl python3 python-is-python3 \
             libssl-dev libelf-dev libncurses-dev zlib1g-dev libyaml-dev \
-            lz4 zstd device-tree-compiler
-          # pahole (dwarves) is needed for BTF; install separately because some
-          # Ubuntu images have it version-pinned.
-          sudo apt-get install -y -qq dwarves || true
+            lz4 zstd device-tree-compiler dwarves
+          # Fail here with a clear message rather than 40 minutes into the build.
+          pahole --version || {
+            echo "::error::pahole is missing; BTF generation will fail"
+            exit 1
+          }
 
       - name: Fetch clang toolchain
         run: |
