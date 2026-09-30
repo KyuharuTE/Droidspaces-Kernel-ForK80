@@ -28,7 +28,7 @@ Enabling them naively moves fields inside `struct task_struct`, which changes th
 offsets that Xiaomi's prebuilt vendor modules (GPU, camera, Wi-Fi) were compiled
 against. Those modules then dereference garbage and the device bootloops.
 
-`scripts/apply-kabi-patch.py` does this by moving `sysvsem` and `sysvshm` into
+`scripts/fix-tree.py` does this by moving `sysvsem` and `sysvshm` into
 the `ANDROID_KABI_RESERVE` padding slots that GKI already reserves for exactly
 this purpose, so **no offset moves**. This patch is mandatory.
 
@@ -101,7 +101,7 @@ GKI protected-exports allowlist, which is separate from signing and fails with
 
 ```
 .github/workflows/build-kernel.yml     the CI build
-scripts/apply-kabi-patch.py            mandatory ABI fix, anchor-based
+scripts/fix-tree.py            mandatory ABI fix, anchor-based
 scripts/build-kernel.sh                integrate KernelSU, configure, compile
 scripts/package-anykernel3.sh          wrap Image into a flashable zip
 kernel-configs/droidspaces-gki.config  the Droidspaces option set

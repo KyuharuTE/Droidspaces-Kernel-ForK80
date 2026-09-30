@@ -157,7 +157,7 @@ jobs:
           cd kernel
           git config user.email "ci@localhost"
           git config user.name "CI"
-          python3 "$GITHUB_WORKSPACE/scripts/apply-kabi-patch.py" "$PWD"
+          python3 "$GITHUB_WORKSPACE/scripts/fix-tree.py" "$PWD"
           echo "--- resulting task_struct ABI region ---"
           grep -nE 'ANDROID_KABI_USE\([0-9]+, struct sysv_sem|struct sysv_shm sysvshm' \
             include/linux/sched.h

@@ -46,11 +46,63 @@ def info(msg: str) -> None:
     print(f"\n[INFO] {msg}")
 
 
+def fix_extract_cert(root: Path) -> None:
+    """Make certs/extract-cert.c compile against OpenSSL 3.x.
+
+    certs/Makefile has an unconditional `hostprogs := extract-cert`, so this
+    host program is built on every kernel build regardless of whether module
+    signing is enabled. Turning CONFIG_MODULE_SIG off does not avoid it.
+
+    The file is self-inconsistent: the declaration
+        #ifdef USE_PKCS11_ENGINE
+        static const char *key_pass;
+    is guarded, but the use at the PKCS#11 branch
+        if (key_pass)
+    is inside only the `#else` of the ENGINE-API deprecation check, not a
+    USE_PKCS11_ENGINE check. When USE_PKCS11_ENGINE is undefined the declaration
+    vanishes and the use remains, so the build dies with:
+
+        certs/extract-cert.c:149:21: error: 'key_pass' undeclared
+
+    OpenSSL 3.0 deprecates the ENGINE API and does not ship the pkcs11 engine, so
+    USE_PKCS11_ENGINE is exactly the configuration that breaks. Guard the ENGINE
+    path on OpenSSL < 3.0 instead, which evaluates to 1 on the OpenSSL these
+    trees were written against and 0 on modern ones, so the PKCS#11 path is
+    skipped rather than half-compiled. No behaviour change for anyone actually
+    signing with a PKCS#11 token on OpenSSL 1.1.
+    """
+    src = root / "certs/extract-cert.c"
+    if not src.is_file():
+        print("\n[INFO] certs/extract-cert.c not present, skipping the OpenSSL fix")
+        return
+
+    text = src.read_text(encoding="utf-8", errors="surrogateescape")
+    old = "#ifdef USE_PKCS11_ENGINE"
+    new = (
+        "#if defined(USE_PKCS11_ENGINE) && !defined(OPENSSL_VERSION_MAJOR)\n"
+        "/* OpenSSL < 3.0 only: 3.x lacks the pkcs11 ENGINE. Without this the\n"
+        " * guarded key_pass declaration disappears while its use below remains,\n"
+        " * which fails the build with \"'key_pass' undeclared\". */"
+    )
+    if new in text:
+        print("\n[INFO] extract-cert.c already carries the OpenSSL guard")
+        return
+    if old not in text:
+        print("\n[INFO] extract-cert.c uses no PKCS11 ENGINE guard; nothing to fix")
+        return
+
+    text = text.replace(old, new, 1)
+    src.write_text(text, encoding="utf-8", errors="surrogateescape")
+    print("\n[INFO] Guarded the PKCS#11 ENGINE path in certs/extract-cert.c for OpenSSL 3.x")
+
+
 def main() -> None:
     root = Path(sys.argv[1] if len(sys.argv) > 1 else ".")
     sched = root / SCHED
     if not sched.is_file():
         die(f"Not a kernel root, missing {SCHED}: {root}")
+
+    fix_extract_cert(root)
 
     # Bytes, not text: this keeps CRLF/LF exactly as the tree has it, so the
     # edit behaves identically on a Linux runner and a Windows checkout.
