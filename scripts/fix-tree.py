@@ -31,6 +31,8 @@ preserved because the file is read and written as bytes.
 """
 
 import re
+import shutil
+import subprocess
 import sys
 from pathlib import Path
 
@@ -88,38 +90,179 @@ def fix_extract_cert(root: Path) -> None:
         print("\n[INFO] certs/extract-cert.c not present, skipping the OpenSSL fix")
         return
 
-    text = src.read_text(encoding="utf-8", errors="surrogateescape")
-    if "#elif !defined(USE_PKCS11_ENGINE)" in text:
+    # Line-based, so a trailing space on a directive cannot defeat the match.
+    # newline="" keeps the file's own CRLF/LF in the strings being edited.
+    with src.open("r", encoding="utf-8", errors="surrogateescape", newline="") as fh:
+        raw = fh.read()
+    lines = raw.split("\n")
+
+    if any("#elif defined(USE_PKCS11_ENGINE)" in l for l in lines):
         print("\n[INFO] extract-cert.c already carries the OpenSSL 3 guard")
         return
 
-    # Skip the ENGINE block entirely on OpenSSL 3.x. Anchor on the BoringSSL
-    # check so this cannot land on an unrelated #else in the file.
-    anchor = "#ifdef OPENSSL_IS_BORINGSSL"
-    idx = text.find(anchor)
-    if idx == -1:
-        die("certs/extract-cert.c: OPENSSL_IS_BORINGSSL guard not found.")
-    else_start = text.find("#else", idx)
-    if else_start == -1:
+    # Locate the BoringSSL guard, then its #else. Anchoring on that guard means
+    # this cannot land on an unrelated #else elsewhere in the file.
+    anchor = None
+    for i, line in enumerate(lines):
+        if line.strip() == "#ifdef OPENSSL_IS_BORINGSSL":
+            anchor = i
+            break
+    if anchor is None:
+        die("certs/extract-cert.c: no '#ifdef OPENSSL_IS_BORINGSSL' directive found.")
+
+    else_idx = None
+    for j in range(anchor + 1, len(lines)):
+        if lines[j].strip() == "#else":
+            else_idx = j
+            break
+    if else_idx is None:
         die("certs/extract-cert.c: no #else after the BoringSSL guard.")
 
-    text = (
-        text[:else_start]
-        + "#elif !defined(USE_PKCS11_ENGINE)\n"
-        + '\t\tfprintf(stderr, "OpenSSL 3.x does not provide the PKCS#11 ENGINE\\n");\n'
-        + "\t\texit(1);\n"
-        + text[else_start + len("#else") :]
-    )
-    src.write_text(text, encoding="utf-8", errors="surrogateescape")
+    # Keep the original indentation of the #else so the diff stays tidy.
+    #
+    # The condition is `defined(USE_PKCS11_ENGINE)`, not
+    # `!defined(USE_PKCS11_ENGINE)`: the block that follows is the ENGINE
+    # implementation, so it must be included when USE_PKCS11_ENGINE is defined
+    # and skipped when it is not. Getting this inverted compiles the ENGINE code
+    # on OpenSSL 3.x, which is exactly the failing case. A minimal repro caught
+    # that; the condition is the whole fix, so it is spelled out here.
+    indent = lines[else_idx][: len(lines[else_idx]) - len(lines[else_idx].lstrip())]
+    lines[else_idx] = f"{indent}#elif defined(USE_PKCS11_ENGINE)"
+    lines[else_idx + 1 : else_idx + 1] = [
+        f'{indent}\t\tfprintf(stderr, "OpenSSL 3.x does not provide the PKCS#11 ENGINE\\n");',
+        f"{indent}\t\texit(1);",
+    ]
 
-    # Verify the guards agree, so a later edit cannot silently reintroduce the
-    # half-compiled block.
-    check = src.read_text(encoding="utf-8", errors="surrogateescape")
-    if "#elif !defined(USE_PKCS11_ENGINE)" not in check:
-        die("extract-cert.c: the OpenSSL 3 guard did not land.")
-    if "static const char *key_pass;" not in check:
-        die("extract-cert.c: the key_pass declaration disappeared.")
-    print("\n[INFO] Skipped the PKCS#11 ENGINE block on OpenSSL 3.x in certs/extract-cert.c")
+    text = "\n".join(lines)
+    with src.open("w", encoding="utf-8", errors="surrogateescape", newline="") as fh:
+        fh.write(text)
+
+    # Verify every reference to key_pass is unreachable on OpenSSL 3.x, which is
+    # the property that actually matters. Checking for the guard text alone
+    # would not have caught the inverted condition that broke the first attempt.
+    check = "\n".join(
+        src.read_text(encoding="utf-8", errors="surrogateescape").split("\n")
+    )
+    refs = [i for i, l in enumerate(check.split("\n"), 1) if "key_pass" in l]
+    if not refs:
+        die("extract-cert.c: key_pass references disappeared entirely.")
+    for line_no in refs:
+        before = check.split("\n")[: line_no - 1]
+        depth = 0
+        guarded = False
+        for prev in reversed(before):
+            s = prev.strip()
+            if re.match(r"#\s*endif\b", s):
+                depth += 1
+            elif re.match(r"#\s*(ifdef|ifndef|if)\b", s):
+                if depth == 0:
+                    guarded = guarded or ("USE_PKCS11_ENGINE" in s)
+                    break
+                depth -= 1
+            elif re.match(r"#\s*(elif|else)\b", s):
+                if depth == 0:
+                    guarded = guarded or ("USE_PKCS11_ENGINE" in s)
+                    break
+        if not guarded:
+            die(
+                f"extract-cert.c line {line_no} uses key_pass without a "
+                "USE_PKCS11_ENGINE guard, so OpenSSL 3.x will still fail to build."
+            )
+    print(
+        "\n[INFO] Skipped the PKCS#11 ENGINE block on OpenSSL 3.x in certs/extract-cert.c"
+    )
+    print(f"       {len(refs)} key_pass reference(s), all under a USE_PKCS11_ENGINE guard")
+
+
+def verify_extract_cert(src: Path) -> None:
+    """Prove the fix with a real preprocessor run, when a compiler is available.
+
+    The property that matters is behavioural, not textual: with
+    USE_PKCS11_ENGINE undefined (OpenSSL 3.x) no reference to key_pass may
+    survive preprocessing, and with it defined (OpenSSL 1.1 PKCS#11 signing) the
+    ENGINE block must still be there.
+
+    An earlier attempt at this fix had the #elif condition inverted, which
+    compiled the ENGINE block precisely on the OpenSSL version that cannot
+    support it. A textual check for the guard passed anyway; only preprocessing
+    catches that class of mistake, so it is worth doing whenever we can.
+    """
+    cc = shutil.which("gcc") or shutil.which("cc") or shutil.which("clang")
+    if not cc:
+        print("[INFO] no host compiler found, skipping the preprocessor check")
+        return
+
+    # Try the real headers first. If they are not present (a bare CI checkout
+    # usually has libssl-dev, a dev container may not), fall back to a stub tree
+    # whose only job is to define OPENSSL_VERSION_MAJOR, which is what makes a
+    # header set look like OpenSSL 3.
+    def run(extra: list[str]) -> str | None:
+        for inc in ([], ["-I", str(build_openssl_stub(src.parent.parent))]):
+            r = subprocess.run(
+                [cc, "-E", *inc, *extra, str(src)],
+                capture_output=True,
+                text=True,
+                errors="replace",
+            )
+            if r.returncode == 0:
+                # Drop preprocessor line markers and any '#' directives that
+                # survive, so only compiled code is counted.
+                return "\n".join(
+                    l
+                    for l in r.stdout.splitlines()
+                    if not l.lstrip().startswith("#")
+                )
+        return None
+
+    undefined = run(["-UUSE_PKCS11_ENGINE"])
+    if undefined is None:
+        print("[INFO] could not preprocess extract-cert.c, skipping the check")
+        return
+
+    if "key_pass" in undefined:
+        n = undefined.count("key_pass")
+        die(
+            "extract-cert.c still references key_pass with USE_PKCS11_ENGINE "
+            f"undefined ({n} reference(s)), so OpenSSL 3.x will not build it."
+        )
+    print("[INFO] Verified: key_pass is not compiled when USE_PKCS11_ENGINE is undefined")
+
+    defined = run(["-DUSE_PKCS11_ENGINE"])
+    if defined is not None:
+        if "ENGINE_by_id" not in defined:
+            die(
+                "extract-cert.c lost its ENGINE block when USE_PKCS11_ENGINE is "
+                "defined, which would break PKCS#11 signing on OpenSSL 1.1."
+            )
+        print("[INFO] Verified: the ENGINE block is intact when USE_PKCS11_ENGINE is defined")
+
+
+def build_openssl_stub(root: Path) -> Path:
+    """Create a minimal OpenSSL 3 header stub, only if real headers are absent.
+
+    extract-cert.c includes bio.h, pem.h, err.h and engine.h. The stub only needs
+    to exist so preprocessing can proceed; the symbol under test, key_pass, is
+    declared in the source file itself and does not come from OpenSSL.
+    """
+    stub = root / ".openssl-stub"
+    inc = stub / "openssl"
+    if not (inc / "opensslv.h").is_file():
+        inc.mkdir(parents=True, exist_ok=True)
+        # Defining OPENSSL_VERSION_MAJOR is the whole point: it is defined only
+        # by OpenSSL 3.x, so this makes the tree look like OpenSSL 3.
+        (inc / "opensslv.h").write_text(
+            "#define OPENSSL_VERSION_MAJOR 3\n"
+            "#define OPENSSL_VERSION_NUMBER 0x30000000L\n"
+        )
+        for name in ("bio", "pem", "err", "engine"):
+            (inc / f"{name}.h").write_text(f"/* stub for {name}.h */\n")
+        (stub / "err.h").write_text(
+            "void err(int, const char *, ...);\n"
+            "void errx(int, const char *, ...);\n"
+            "void warn(const char *, ...);\n"
+            "void warnx(const char *, ...);\n"
+        )
+    return stub
 
 
 def main() -> None:
@@ -129,6 +272,7 @@ def main() -> None:
         die(f"Not a kernel root, missing {SCHED}: {root}")
 
     fix_extract_cert(root)
+    verify_extract_cert(root / "certs/extract-cert.c")
 
     # Bytes, not text: this keeps CRLF/LF exactly as the tree has it, so the
     # edit behaves identically on a Linux runner and a Windows checkout.
