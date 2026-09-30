@@ -53,23 +53,35 @@ def fix_extract_cert(root: Path) -> None:
     host program is built on every kernel build regardless of whether module
     signing is enabled. Turning CONFIG_MODULE_SIG off does not avoid it.
 
-    The file is self-inconsistent: the declaration
-        #ifdef USE_PKCS11_ENGINE
-        static const char *key_pass;
-    is guarded, but the use at the PKCS#11 branch
-        if (key_pass)
-    is inside only the `#else` of the ENGINE-API deprecation check, not a
-    USE_PKCS11_ENGINE check. When USE_PKCS11_ENGINE is undefined the declaration
-    vanishes and the use remains, so the build dies with:
+    The problem is a missing guard. The PKCS#11 branch is guarded only by
+    OPENSSL_IS_BORINGSSL:
 
-        certs/extract-cert.c:149:21: error: 'key_pass' undeclared
+        } else if (!strncmp(cert_src, "pkcs11:", 7)) {
+        #ifdef OPENSSL_IS_BORINGSSL
+                fprintf(stderr, "BoringSSL does not support PKCS#11\\n");
+                exit(1);
+        #else
+                ENGINE *e;
+                ...
+                if (key_pass)          <-- 'key_pass' undeclared
+        #endif
 
-    OpenSSL 3.0 deprecates the ENGINE API and does not ship the pkcs11 engine, so
-    USE_PKCS11_ENGINE is exactly the configuration that breaks. Guard the ENGINE
-    path on OpenSSL < 3.0 instead, which evaluates to 1 on the OpenSSL these
-    trees were written against and 0 on modern ones, so the PKCS#11 path is
-    skipped rather than half-compiled. No behaviour change for anyone actually
-    signing with a PKCS#11 token on OpenSSL 1.1.
+    and `key_pass` itself is declared and assigned only under
+    USE_PKCS11_ENGINE. OpenSSL 3.0 deprecates the ENGINE API and ships no pkcs11
+    engine, so USE_PKCS11_ENGINE is undefined there while the #else branch that
+    needs it still compiles, and the build dies with:
+
+        certs/extract-cert.c:152:21: error: 'key_pass' undeclared
+
+    Guarding the declaration alone is not enough: the whole ENGINE block still
+    compiles, which is why an earlier attempt at that only moved the error from
+    line 149 to line 152. The fix turns the #else into an #elif so the block is
+    skipped whole. OPENSSL_VERSION_MAJOR is defined only by OpenSSL 3.x, so
+    `!defined(OPENSSL_VERSION_MAJOR)` is 1 on the OpenSSL these trees were
+    written against and 0 on 3.x.
+
+    Result: a clean "PKCS#11 not supported" exit on OpenSSL 3.x, unchanged
+    behaviour for anyone signing via a PKCS#11 token on OpenSSL 1.1.
     """
     src = root / "certs/extract-cert.c"
     if not src.is_file():
@@ -77,23 +89,37 @@ def fix_extract_cert(root: Path) -> None:
         return
 
     text = src.read_text(encoding="utf-8", errors="surrogateescape")
-    old = "#ifdef USE_PKCS11_ENGINE"
-    new = (
-        "#if defined(USE_PKCS11_ENGINE) && !defined(OPENSSL_VERSION_MAJOR)\n"
-        "/* OpenSSL < 3.0 only: 3.x lacks the pkcs11 ENGINE. Without this the\n"
-        " * guarded key_pass declaration disappears while its use below remains,\n"
-        " * which fails the build with \"'key_pass' undeclared\". */"
-    )
-    if new in text:
-        print("\n[INFO] extract-cert.c already carries the OpenSSL guard")
-        return
-    if old not in text:
-        print("\n[INFO] extract-cert.c uses no PKCS11 ENGINE guard; nothing to fix")
+    if "#elif !defined(USE_PKCS11_ENGINE)" in text:
+        print("\n[INFO] extract-cert.c already carries the OpenSSL 3 guard")
         return
 
-    text = text.replace(old, new, 1)
+    # Skip the ENGINE block entirely on OpenSSL 3.x. Anchor on the BoringSSL
+    # check so this cannot land on an unrelated #else in the file.
+    anchor = "#ifdef OPENSSL_IS_BORINGSSL"
+    idx = text.find(anchor)
+    if idx == -1:
+        die("certs/extract-cert.c: OPENSSL_IS_BORINGSSL guard not found.")
+    else_start = text.find("#else", idx)
+    if else_start == -1:
+        die("certs/extract-cert.c: no #else after the BoringSSL guard.")
+
+    text = (
+        text[:else_start]
+        + "#elif !defined(USE_PKCS11_ENGINE)\n"
+        + '\t\tfprintf(stderr, "OpenSSL 3.x does not provide the PKCS#11 ENGINE\\n");\n'
+        + "\t\texit(1);\n"
+        + text[else_start + len("#else") :]
+    )
     src.write_text(text, encoding="utf-8", errors="surrogateescape")
-    print("\n[INFO] Guarded the PKCS#11 ENGINE path in certs/extract-cert.c for OpenSSL 3.x")
+
+    # Verify the guards agree, so a later edit cannot silently reintroduce the
+    # half-compiled block.
+    check = src.read_text(encoding="utf-8", errors="surrogateescape")
+    if "#elif !defined(USE_PKCS11_ENGINE)" not in check:
+        die("extract-cert.c: the OpenSSL 3 guard did not land.")
+    if "static const char *key_pass;" not in check:
+        die("extract-cert.c: the key_pass declaration disappeared.")
+    print("\n[INFO] Skipped the PKCS#11 ENGINE block on OpenSSL 3.x in certs/extract-cert.c")
 
 
 def main() -> None:
