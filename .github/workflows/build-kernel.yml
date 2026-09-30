@@ -36,15 +36,19 @@ on:
         required: false
         type: boolean
         default: false
+      publish_release:
+        description: Publish the AnyKernel3 zip and Image as a GitHub release
+        required: false
+        type: boolean
+        default: true
   push:
     paths:
       - '.github/workflows/build-kernel.yml'
       - 'kernel-configs/**'
-      - 'patches/**'
       - 'scripts/**'
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
@@ -216,3 +220,95 @@ jobs:
           name: kernel-config-zorn
           path: kernel/out/.config
           if-no-files-found: warn
+
+  # Publishing from CI rather than downloading the artifact and re-uploading it
+  # from a laptop: the runner already has the files, so the transfer stays inside
+  # GitHub instead of crossing the user's connection twice.
+  release:
+    needs: build
+    if: ${{ inputs.publish_release || github.event_name == 'push' }}
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Download the packaged artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          TAG="droidspaces-ksu-next-6.1-zorn"
+
+          echo "Artifacts:"
+          find dist -type f -printf '  %p  %s bytes\n'
+
+          cat >notes.md <<EOF
+          GKI 6.1 kernel for the Redmi K80 / POCO F7 Pro (\`zorn\`), built for
+          [Droidspaces](https://github.com/ravindu644/Droidspaces-OSS) containers with
+          KernelSU-Next for root.
+
+          ## Flash this
+
+          The AnyKernel3 zip. It replaces only \`boot.img\`, so the stock \`vendor_dlkm\`
+          modules stay untouched. Keep your stock \`boot.img\` extracted before flashing.
+
+          | | |
+          | --- | --- |
+          | Kernel | Linux 6.1, \`android14-6.1\`, arm64 |
+          | KMI | generation 11, matches \`6.1.x-android14-11-*\` |
+          | Source | \`${KERNEL_REPO:-cnmrlin/android_kernel_xiaomi_sm8650}\` |
+          | Toolchain | clang-r487747c |
+          | Root | KernelSU-Next, kprobes mode |
+
+          Built by GitHub Actions from commit \`${GITHUB_SHA}\`. The build fails rather
+          than shipping a kernel Droidspaces would reject, so CONFIG_SYSVIPC,
+          CONFIG_IPC_NS, CONFIG_PID_NS, CONFIG_UTS_NS, CONFIG_DEVTMPFS and CONFIG_KSU
+          were all verified present before compiling.
+
+          ## The kABI patch
+
+          Enabling \`CONFIG_SYSVIPC\` naively moves fields inside \`struct task_struct\`,
+          shifting the offsets Xiaomi's prebuilt vendor modules were compiled against,
+          which bootloops the device. The patch parks \`sysvsem\`/\`sysvshm\` in the
+          \`ANDROID_KABI_RESERVE\` slots instead, so no offset moves. This tree already
+          uses slots 1-3, so the build picks the first free triple by scanning the file.
+
+          ## After booting
+
+          \`\`\`bash
+          su -c droidspaces check     # namespaces, cgroups, devtmpfs
+          su -c ksu --version         # or open the KernelSU-Next manager
+          \`\`\`
+
+          \`droidspaces check\` calls \`unshare()\` against the running kernel rather than
+          reading flags, so it reports the truth.
+
+          ## If it bootloops
+
+          Restore your stock \`boot.img\` over fastboot first. Confirm \`uname -r\` reports
+          \`6.1.x-android14-11-*\`, since a KMI mismatch is an instant bootloop.
+
+          ## Risks
+
+          Flashing a kernel can brick the device. Everything here is built from public
+          sources and is reproducible from this repo.
+          EOF
+
+          if gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1; then
+            echo "Release $TAG exists, uploading with --clobber"
+            gh release upload "$TAG" --repo "$REPO" --clobber \
+              dist/AnyKernel3-zorn-droidspaces-ksu-next/*.zip \
+              dist/Image-zorn-droidspaces-ksu-next/Image
+          else
+            gh release create "$TAG" --repo "$REPO" \
+              --title "Droidspaces + KernelSU-Next (6.1, zorn)" \
+              --notes-file notes.md \
+              dist/AnyKernel3-zorn-droidspaces-ksu-next/*.zip \
+              dist/Image-zorn-droidspaces-ksu-next/Image
+          fi
+
+          echo "Release URL:"
+          gh release view "$TAG" --repo "$REPO" --json url --jq .url
