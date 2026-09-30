@@ -28,14 +28,28 @@ Enabling them naively moves fields inside `struct task_struct`, which changes th
 offsets that Xiaomi's prebuilt vendor modules (GPU, camera, Wi-Fi) were compiled
 against. Those modules then dereference garbage and the device bootloops.
 
-`patches/001-gki-sysvipc-kabi.patch` fixes this by moving `sysvsem` and `sysvshm`
-into the `ANDROID_KABI_RESERVE` padding slots that GKI already reserves for
-exactly this purpose, so **no offset moves**. This patch is mandatory.
+`scripts/apply-kabi-patch.py` does this by moving `sysvsem` and `sysvshm` into
+the `ANDROID_KABI_RESERVE` padding slots that GKI already reserves for exactly
+this purpose, so **no offset moves**. This patch is mandatory.
 
-If the device bootloops on first flash, the sibling patches at
-`Droidspaces-OSS/Documentation/resources/kernel-patches/GKI/below-kernel-6.12/`
-named `..._1_2_3.patch` and `..._3_4_5.patch` occupy different reserve slots.
-Which one is correct depends on which slots the vendor kernel already uses.
+It edits the file by anchor rather than applying a static patch, for two
+reasons. Upstream ships three static variants (`_1_2_3`, `_3_4_5`, `_6_7_8`)
+that differ only in which reserve slots they consume, and all three assume slots
+1 and 2 are free. This tree already uses 1, 2 and 3:
+
+```
+ANDROID_KABI_USE(1, unsigned int saved_state);
+ANDROID_KABI_USE(2, struct task_dma_buf_info *dmabuf_info);
+ANDROID_KABI_USE(3, struct { ... });
+ANDROID_KABI_RESERVE(4);   <-- first free slot
+```
+
+so the only free run is 4..8 and the first available triple is 6/7/8. On top of
+that, the tree has `union rv_task_monitor` and an `#endif` immediately before the
+reserve slots, so the upstream hunk context does not match either. A static patch
+cannot express "whatever happens to be here", so the script scans which slots are
+free and rewrites those lines. It refuses to continue if it cannot verify the
+result.
 
 **2. KernelSU needs `CONFIG_KSU`.** That symbol is `default y` and depends on
 `KPROBES && EXT4_FS`, both already enabled in GKI, so it largely enables itself.
@@ -86,11 +100,11 @@ GKI protected-exports allowlist, which is separate from signing and fails with
 ## Layout
 
 ```
-.github/workflows/build-kernel.yml   the CI build
-scripts/build-kernel.sh              patch, integrate KernelSU, configure, compile
-scripts/package-anykernel3.sh        wrap Image into a flashable zip
+.github/workflows/build-kernel.yml     the CI build
+scripts/apply-kabi-patch.py            mandatory ABI fix, anchor-based
+scripts/build-kernel.sh                integrate KernelSU, configure, compile
+scripts/package-anykernel3.sh          wrap Image into a flashable zip
 kernel-configs/droidspaces-gki.config  the Droidspaces option set
-patches/001-gki-sysvipc-kabi.patch     mandatory kABI fix
 ```
 
 ## Usage

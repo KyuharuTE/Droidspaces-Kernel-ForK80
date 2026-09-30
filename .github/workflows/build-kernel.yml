@@ -148,27 +148,19 @@ jobs:
 
       - name: Apply Droidspaces kABI patch
         run: |
-          # The patch has to land before the build, and the script refuses to
-          # enable SYSVIPC if it did not apply.
-          cp -v patches/001-gki-sysvipc-kabi.patch "$RUNNER_TEMP/"
+          # This is mandatory and it is not a plain `git apply`. The upstream
+          # static variants all assume ABI reserve slots 1 and 2 are free, which
+          # is false on this tree (it uses 1, 2 and 3) and their hunk context
+          # does not match either. The script scans which slots are free and
+          # edits include/linux/sched.h by anchor, so line endings and context
+          # cannot break it. It refuses to proceed if it cannot verify.
           cd kernel
           git config user.email "ci@localhost"
           git config user.name "CI"
-          # git apply wants a real work tree state; these trees are clean after
-          # a fresh shallow clone.
-          if git apply --check "$RUNNER_TEMP/001-gki-sysvipc-kabi.patch"; then
-            git apply "$RUNNER_TEMP/001-gki-sysvipc-kabi.patch"
-            echo "Patch applied"
-          else
-            echo "::error::kABI patch did not apply to this tree."
-            echo "If it bootloops on device, the 1_2_3 or 3_4_5 variant from"
-            echo "Droidspaces-OSS Documentation/resources/kernel-patches/GKI/below-kernel-6.12/"
-            echo "occupies different ABI reserve slots and may be the right one."
-            exit 1
-          fi
-          grep -q 'ANDROID_KABI_USE(6, struct sysv_sem sysvsem)' include/linux/sched.h \
-            || { echo "::error::patch verification failed"; exit 1; }
-          echo "Verified sysvsem/sysvshm are in the KABI reserve slots"
+          python3 "$GITHUB_WORKSPACE/scripts/apply-kabi-patch.py" "$PWD"
+          echo "--- resulting task_struct ABI region ---"
+          grep -nE 'ANDROID_KABI_USE\([0-9]+, struct sysv_sem|struct sysv_shm sysvshm' \
+            include/linux/sched.h
 
       - name: Optionally drop GKI protected exports
         if: ${{ inputs.remove_protected_exports }}
@@ -185,13 +177,11 @@ jobs:
           CONFIG_FRAGMENT: ${{ github.workspace }}/kernel-configs/droidspaces-gki.config
           KERNEL_ROOT: ${{ github.workspace }}/kernel
           OUT_DIR: ${{ github.workspace }}/kernel/out
-          KABI_PATCH_FILE: ${{ runner.temp }}/001-gki-sysvipc-kabi.patch
         run: |
           chmod +x scripts/build-kernel.sh
           KERNEL_ROOT="$KERNEL_ROOT" OUT_DIR="$OUT_DIR" \
           CONFIG_FRAGMENT="$CONFIG_FRAGMENT" \
           ROOT_SOLUTION="$ROOT_SOLUTION" KSU_REF="$KSU_REF" \
-          KABI_PATCH_FILE="$KABI_PATCH_FILE" \
           bash scripts/build-kernel.sh
 
       - name: Package AnyKernel3 zip

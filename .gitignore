@@ -15,3 +15,7 @@ _tutorial/
 *.swp
 .DS_Store
 Thumbs.db
+
+# Python bytecode from the kABI patch script.
+__pycache__/
+*.pyc
