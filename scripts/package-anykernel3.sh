@@ -21,6 +21,10 @@ RUNNER_TEMP="${RUNNER_TEMP:-/tmp}"
 # AK3_REF=master if you prefer upstream.
 AK3_REPO="${AK3_REPO:-https://github.com/WildKernels/AnyKernel3.git}"
 AK3_REF="${AK3_REF:-gki-2.0}"
+# gzip | lz4 | none. Compressed by default: the raw Image is ~36 MB and does not
+# fit the boot partition, which shows up as "New image larger than target
+# partition" during the flash.
+KERNEL_COMPRESSION="${KERNEL_COMPRESSION:-gzip}"
 
 info() { printf '\n\033[1;34m[INFO]\033[0m %s\n' "$*"; }
 warn() { printf '\n\033[1;33m[WARN]\033[0m %s\n' "$*"; }
@@ -95,7 +99,44 @@ grep -iE '^(do\.devicecheck|do\.modules|do\.systemless|block|is_slot_device)=' "
     | while read -r line; do info "anykernel.sh: $line"; done
 
 info "Placing kernel"
-cp "$IMAGE" "$AK3_DIR/Image"
+# Ship a compressed kernel, not the raw one.
+#
+# The raw arm64 Image for this tree is ~36 MB, and flashing it fails with
+# "New image larger than target partition". AnyKernel3 hands whatever it finds
+# to magiskboot, and magiskboot only keeps a kernel compressed if it was given
+# one already: given a raw Image it writes a raw Image, which the boot partition
+# cannot hold.
+#
+# AnyKernel3 looks for these names in order (ak3-core.sh):
+#   zImage zImage-dtb Image Image-dtb Image.gz Image.gz-dtb Image.bz2 ...
+# so Image.gz is picked up correctly and magiskboot then repacks it gzipped.
+#
+# gzip is the safe default: arm64 GKI kernels always carry CONFIG_KERNEL_GZIP,
+# so the bootloader can decompress it. -n omits the timestamp and filename so
+# the same Image always produces the same bytes.
+case "$KERNEL_COMPRESSION" in
+    gzip | "" )
+        info "Compressing Image with gzip (raw: $(du -h "$IMAGE" | cut -f1))"
+        gzip -9nc "$IMAGE" >"$AK3_DIR/Image.gz" || die "gzip failed"
+        # A truncated or empty gz would still be flashed, so verify it round-trips.
+        gzip -t "$AK3_DIR/Image.gz" || die "produced Image.gz is corrupt"
+        RAW_SIZE=$(stat -c %s "$IMAGE")
+        GZ_SIZE=$(stat -c %s "$AK3_DIR/Image.gz")
+        [ "$GZ_SIZE" -lt "$RAW_SIZE" ] || die "Image.gz is not smaller than Image"
+        info "Image.gz: $((GZ_SIZE / 1024 / 1024)) MB vs $((RAW_SIZE / 1024 / 1024)) MB raw"
+        ;;
+    lz4)
+        info "Compressing Image with lz4"
+        lz4 -l -9 -f "$IMAGE" "$AK3_DIR/Image.lz4" >/dev/null || die "lz4 failed"
+        ;;
+    none)
+        warn "KERNEL_COMPRESSION=none: shipping the raw Image, which may not fit the boot partition"
+        cp "$IMAGE" "$AK3_DIR/Image"
+        ;;
+    *)
+        die "Unknown KERNEL_COMPRESSION '$KERNEL_COMPRESSION' (use gzip, lz4 or none)"
+        ;;
+esac
 
 [ -d "$AK3_DIR/META-INF" ] || die "AnyKernel3 META-INF missing"
 [ -d "$AK3_DIR/tools" ] || die "AnyKernel3 tools missing"
@@ -111,4 +152,4 @@ rm -f "$OUT_ZIP"
 info "Package: $OUT_ZIP ($(du -h "$OUT_ZIP" | cut -f1))"
 
 info "Archive layout"
-unzip -l "$OUT_ZIP" | awk 'NR<=6 || /anykernel.sh|^.*Image$/'
+unzip -l "$OUT_ZIP" | awk 'NR<=6 || /anykernel\.sh|Image/'
