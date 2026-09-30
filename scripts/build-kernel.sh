@@ -132,6 +132,26 @@ if [ "$ROOT_SOLUTION" != "none" ]; then
     set_config CONFIG_KSU y "$OUT_DIR/.config"
 fi
 
+# Module signing is turned off, for two independent reasons.
+#
+# 1. It does not build here. certs/extract-cert.c fails against OpenSSL 3.x with
+#    "'key_pass' undeclared", which is a known break in these trees and kills
+#    the build at the signing step, ~40 minutes in.
+# 2. It is not needed, and disabling it is what lets the stock vendor modules
+#    load. CONFIG_MODULE_SIG_PROTECT (set by this tree) already hardcodes
+#    sig_enforce to false, and the separate protected-exports allowlist that
+#    rejects modules with -EACCES depends on MODULE_SIG, so turning MODULE_SIG
+#    off removes that rejection path as well.
+info "Disabling module signing"
+for sym in CONFIG_MODULE_SIG CONFIG_MODULE_SIG_ALL CONFIG_MODULE_SIG_FORCE \
+           CONFIG_MODULE_SIG_SHA1 CONFIG_MODULE_SIG_SHA224 CONFIG_MODULE_SIG_SHA256 \
+           CONFIG_MODULE_SIG_SHA384 CONFIG_MODULE_SIG_SHA512 \
+           CONFIG_MODULE_SIG_KEY_TYPE_RSA CONFIG_MODULE_SIG_KEY_TYPE_ECDSA \
+           CONFIG_MODULE_SIG_PROTECT CONFIG_SYSTEM_TRUSTED_KEYRING \
+           CONFIG_SECONDARY_TRUSTED_KEYRING CONFIG_SYSTEM_BLACKLIST_KEYRING; do
+    set_config "$sym" n "$OUT_DIR/.config"
+done
+
 info "Resolving the config with olddefconfig"
 make "${MAKE_COMMON[@]}" olddefconfig >/dev/null || die "olddefconfig failed"
 
