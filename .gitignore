@@ -6,6 +6,7 @@ _tutorial/
 # Build output, if anyone ever builds here directly instead of in CI.
 /kernel/
 /out/
+/dist/
 *.o
 *.ko
 

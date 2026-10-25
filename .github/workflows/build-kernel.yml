@@ -41,15 +41,6 @@ on:
         required: false
         type: boolean
         default: true
-  push:
-    # branches, not tags. Creating a release makes a tag, and without this
-    # restriction that tag push starts a second 20 minute build for no reason.
-    branches: [main]
-    paths:
-      - '.github/workflows/build-kernel.yml'
-      - 'kernel-configs/**'
-      - 'scripts/**'
-
 permissions:
   contents: write
 
@@ -229,7 +220,7 @@ jobs:
   # GitHub instead of crossing the user's connection twice.
   release:
     needs: build
-    if: ${{ inputs.publish_release || github.event_name == 'push' }}
+    if: ${{ inputs.publish_release }}
     runs-on: ubuntu-24.04
     steps:
       - name: Download the packaged artifacts

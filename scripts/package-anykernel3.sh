@@ -49,11 +49,11 @@ info "Fetching AnyKernel3"
 # makes an A/B device non-slotted. Both are rewritten below. Note AnyKernel3
 # master removed the lowercase aliases (block=, is_slot_device=) in mid-2026, so
 # the uppercase spellings are the only ones that work on master.
-AK3_DIR="$RUNNER_TEMP/AnyKernel3"
-if [ ! -d "$AK3_DIR/.git" ]; then
-    git clone --depth 1 --branch "$AK3_REF" "$AK3_REPO" "$AK3_DIR" \
-        || die "AnyKernel3 clone failed"
-fi
+AK3_WORK="$(mktemp -d "$RUNNER_TEMP/anykernel3.XXXXXXXX")"
+trap 'rm -rf "$AK3_WORK"' EXIT
+AK3_DIR="$AK3_WORK/AnyKernel3"
+git clone --depth 1 --branch "$AK3_REF" "$AK3_REPO" "$AK3_DIR" \
+    || die "AnyKernel3 clone failed"
 
 # AnyKernel3 is a template for many devices. Trim it to one, and drop the
 # sample kernels so the zip only contains what this build produced.

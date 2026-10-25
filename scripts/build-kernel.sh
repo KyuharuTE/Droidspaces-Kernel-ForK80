@@ -63,7 +63,7 @@ info "Kernel version: $(make kernelversion 2>/dev/null || echo unknown)"
 # ---------------------------------------------------------------------------
 # 1. Confirm the kABI patch is in place.
 #
-# Applying it is a separate step (scripts/apply-kabi-patch.py) because the
+# Applying it is a separate step (scripts/fix-tree.py) because the
 # upstream static variants do not match this tree. By the time we get here it
 # must already be applied, and we verify rather than re-apply, so a missing
 # patch fails here instead of after a 40 minute build.
@@ -72,7 +72,7 @@ info "Verifying the SYSVIPC kABI patch is present"
 if grep -qE 'ANDROID_KABI_USE\([0-9]+, struct sysv_sem sysvsem\)' include/linux/sched.h; then
     info "sysvsem/sysvshm are in the ABI reserve slots"
 elif grep -qE '^\s*struct\s+sysv_sem\s+sysvsem\s*;' include/linux/sched.h; then
-    die "The kABI patch is NOT applied and sysvsem is still a plain task_struct field. Enabling CONFIG_SYSVIPC now would shift struct offsets and bootloop the device on the stock vendor modules. Run scripts/apply-kabi-patch.py first."
+    die "The kABI patch is NOT applied and sysvsem is still a plain task_struct field. Enabling CONFIG_SYSVIPC now would shift struct offsets and bootloop the device on the stock vendor modules. Run scripts/fix-tree.py first."
 else
     info "No unconditional sysvsem field found; assuming the patch is applied or the tree differs"
 fi
@@ -173,8 +173,8 @@ fi
 
 # ---------------------------------------------------------------------------
 # 4. Gate on the symbols Droidspaces actually probes at runtime. Building for
-#    40 minutes to produce a kernel the app rejects is a waste of everyone's CI
-#    minutes, so this fails before the compile starts.
+#    40 minutes to produce a kernel the app rejects wastes build time, so this
+#    fails before the compile starts.
 # ---------------------------------------------------------------------------
 info "Verifying Droidspaces requirements"
 FAILED=0
@@ -199,7 +199,7 @@ check_y CONFIG_EXT4_FS     "KernelSU depends on it"
 check_y CONFIG_KPROBES     "KernelSU depends on it"
 [ "$ROOT_SOLUTION" != "none" ] && check_y CONFIG_KSU "KernelSU"
 
-[ "$FAILED" = "0" ] || die "Required symbols missing. Not wasting CI time on this build."
+[ "$FAILED" = "0" ] || die "Required symbols missing. Stopping before compilation."
 
 info "Optional symbols (report only)"
 for sym in CONFIG_USER_NS CONFIG_OVERLAY_FS CONFIG_NET_NS CONFIG_VETH \
@@ -218,8 +218,10 @@ grep -qE '^CONFIG_MODULE_SIG_FORCE=y' "$OUT_DIR/.config" \
 # ---------------------------------------------------------------------------
 # 5. Build.
 # ---------------------------------------------------------------------------
-info "Compiling with $(nproc) jobs"
-make "${MAKE_COMMON[@]}" -j"$(nproc)" Image || die "Kernel build failed"
+BUILD_JOBS="${BUILD_JOBS:-$(nproc)}"
+[[ "$BUILD_JOBS" =~ ^[1-9][0-9]*$ ]] || die "BUILD_JOBS must be a positive integer"
+info "Compiling with $BUILD_JOBS jobs"
+make "${MAKE_COMMON[@]}" -j"$BUILD_JOBS" Image || die "Kernel build failed"
 
 IMAGE="$OUT_DIR/arch/arm64/boot/Image"
 [ -f "$IMAGE" ] || die "Image not produced at $IMAGE"

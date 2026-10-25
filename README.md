@@ -2,7 +2,7 @@
 
 An Android GKI kernel for the Redmi K80 / POCO F7 Pro that runs
 [Droidspaces](https://github.com/ravindu644/Droidspaces-OSS) containers, built
-with KernelSU-Next for root, compiled by GitHub Actions and delivered as a
+with KernelSU-Next for root, compiled in a GitHub Codespace and delivered as a
 flashable AnyKernel3 zip.
 
 ## What this actually is
@@ -84,37 +84,59 @@ tree rather than assumed:
   not depend on LTO, and KernelSU ships `USE_KCFI` handling for it. Turning CFI
   off changes struct layouts the vendor modules were built against. AOSP disables
   CFI in its `gki_kprobes` variant, but that is for ftrace tracing, not for root.
-- **`CONFIG_MODULE_SIG`** stays on. `CONFIG_MODULE_SIG_PROTECT=y` hardcodes
-  `sig_enforce` to `false` and makes `module_sig_check()` return `0` for unsigned
-  modules, so vendor modules already load. Disabling `MODULE_SIG` solves nothing
-  and loses a mitigation.
+- **Module signing** is disabled by `scripts/build-kernel.sh` to work around
+  this tree's OpenSSL 3 build path and protected-exports handling. Read the
+  resulting `.config` before flashing.
 - **LTO** stays off. That is already the GKI default on `android14-6.1`.
 - **`CONFIG_TRIM_UNUSED_KSYMS`** is absent from GKI and must stay absent. Turning
   it on is the classic way to make vendor modules fail with `Unknown symbol`.
 
-The real vendor-module risk besides kABI drift is `CONFIG_MODULE_SIG_PROTECT`'s
-GKI protected-exports allowlist, which is separate from signing and fails with
-`-EACCES` at `insmod`. If Wi-Fi or Bluetooth break, re-run the workflow with
-`remove_protected_exports` enabled.
+If vendor modules fail with `-EACCES`, inspect the device logs and build config
+before changing the protected-exports list.
 
 ## Layout
 
 ```
-.github/workflows/build-kernel.yml     the CI build
+.github/workflows/build-kernel.yml     optional manual CI build
+scripts/codespace-build.sh             Codespace setup, build, package, checks
 scripts/fix-tree.py            mandatory ABI fix, anchor-based
 scripts/build-kernel.sh                integrate KernelSU, configure, compile
 scripts/package-anykernel3.sh          wrap Image into a flashable zip
 kernel-configs/droidspaces-gki.config  the Droidspaces option set
 ```
 
-## Usage
+## Build and test in Codespaces
 
-Push this to GitHub, then **Actions → Build Droidspaces + KernelSU-Next kernel →
-Run workflow**. Artifacts:
+Open this repository in a Linux Codespace and run these commands in its terminal:
 
-- `AnyKernel3-zorn-droidspaces-ksu-next` — flash this
-- `Image-zorn-droidspaces-ksu-next` — the raw kernel, for manual packing
-- `kernel-config-zorn` — the resolved `.config`, worth reading when something fails
+```bash
+bash scripts/codespace-build.sh setup   # dependencies, pinned clang, source, ABI patch
+bash scripts/codespace-build.sh build   # compile; rerun after edits to reuse objects
+bash scripts/codespace-build.sh package # create the flashable zip from the Image
+bash scripts/codespace-build.sh check   # verify config, Image and zip structure
+```
+
+`bash scripts/codespace-build.sh all` performs the entire sequence. The source
+checkout is `kernel/`; its changes remain available for the next build. The
+default object directory is `/tmp/droidspaces-kernel-out`, because the 32 GB
+Codespace has more free space on `/tmp` than under `/workspaces`. Objects there
+can disappear when the container is rebuilt. Set `OUT_DIR` to another location
+if your Codespace has enough persistent disk. `BUILD_JOBS` defaults to the CPU
+count and can be lowered if memory is tight.
+
+The outputs are:
+
+- `dist/AnyKernel3_zorn_droidspaces_ksu-next.zip` — flashable package
+- `$OUT_DIR/arch/arm64/boot/Image` — raw kernel
+- `$OUT_DIR/.config` — resolved configuration
+
+The `kernel/` and `dist/` paths are ignored by Git. Review source changes in
+`kernel/` separately; they are not part of this configuration repository.
+
+GitHub Actions no longer builds on push. **Actions → Build Droidspaces +
+KernelSU-Next kernel → Run workflow** is available for an optional clean build
+and artifact upload. The separate publish workflow still accepts artifacts
+from an existing Actions run; it does not publish Codespace files.
 
 Flash the AnyKernel3 zip from a custom recovery or Kernel Flasher. It replaces
 only `boot.img`, so `vendor_dlkm` keeps the stock modules.
