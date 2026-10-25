@@ -117,20 +117,26 @@ bash scripts/codespace-build.sh check   # verify config, Image and zip structure
 ```
 
 `bash scripts/codespace-build.sh all` performs the entire sequence. The source
-checkout is `kernel/`; its changes remain available for the next build. The
-default object directory is `/tmp/droidspaces-kernel-out`, because the 32 GB
-Codespace has more free space on `/tmp` than under `/workspaces`. Objects there
-can disappear when the container is rebuilt. Set `OUT_DIR` to another location
-if your Codespace has enough persistent disk. `BUILD_JOBS` defaults to the CPU
-count and can be lowered if memory is tight.
+checkout is `kernel/`; its changes remain available for the next build. Objects
+are stored in `.cache/droidspaces/out`, and the pinned Clang toolchain is cached
+in `.cache/droidspaces/clang-r487747c`. These paths are inside `/workspaces` in
+Codespaces, so they survive stopping, restarting, changing machine type and
+rebuilding the container. `/tmp` is only used for disposable staging files.
+
+Use a 4-core / 16 GB Codespace for development. `BUILD_JOBS` defaults to the CPU
+count (4 on that machine) and can be lowered if memory is tight. `CACHE_DIR`,
+`OUT_DIR` and `TOOLCHAIN_DIR` can override the defaults; keep them under
+`/workspaces` for persistence. After a container rebuild, run `setup` again to
+restore system dependencies; it reuses the cached source and toolchain.
+Changes to sources, config or compiler can still require recompilation.
 
 The outputs are:
 
 - `dist/AnyKernel3_zorn_droidspaces_ksu-next.zip` — flashable package
-- `$OUT_DIR/arch/arm64/boot/Image` — raw kernel
-- `$OUT_DIR/.config` — resolved configuration
+- `.cache/droidspaces/out/arch/arm64/boot/Image` — raw kernel (default `OUT_DIR`)
+- `.cache/droidspaces/out/.config` — resolved configuration
 
-The `kernel/` and `dist/` paths are ignored by Git. Review source changes in
+The `kernel/`, `.cache/droidspaces/` and `dist/` paths are ignored by Git. Review source changes in
 `kernel/` separately; they are not part of this configuration repository.
 
 GitHub Actions no longer builds on push. **Actions → Build Droidspaces +

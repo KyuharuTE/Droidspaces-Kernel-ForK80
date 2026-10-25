@@ -5,10 +5,11 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 KERNEL_ROOT="${KERNEL_ROOT:-$REPO_ROOT/kernel}"
-# The 32 GB Codespace has a separate, larger /tmp volume. Keep the source in
-# the persistent workspace and put the large incremental object tree there.
-OUT_DIR="${OUT_DIR:-/tmp/droidspaces-kernel-out}"
-TOOLCHAIN_DIR="${TOOLCHAIN_DIR:-$HOME/.cache/droidspaces/clang-r487747c}"
+# Keep both objects and downloaded tools under the workspace. /tmp is cleared
+# when a Codespace stops; the home directory is reset on container rebuilds.
+CACHE_DIR="${CACHE_DIR:-$REPO_ROOT/.cache/droidspaces}"
+OUT_DIR="${OUT_DIR:-$CACHE_DIR/out}"
+TOOLCHAIN_DIR="${TOOLCHAIN_DIR:-$CACHE_DIR/clang-r487747c}"
 KERNEL_REPO="${KERNEL_REPO:-https://github.com/cnmrlin/android_kernel_xiaomi_sm8650.git}"
 KERNEL_BRANCH="${KERNEL_BRANCH:-lineage-24.0}"
 CLANG_VERSION=r487747c
