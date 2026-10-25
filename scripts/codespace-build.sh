@@ -15,7 +15,7 @@ KERNEL_BRANCH="${KERNEL_BRANCH:-lineage-24.0}"
 CLANG_VERSION=r487747c
 RUNNER_TEMP="${RUNNER_TEMP:-/tmp/droidspaces-build}"
 IMAGE="$OUT_DIR/arch/arm64/boot/Image"
-OUT_ZIP="$REPO_ROOT/dist/AnyKernel3_zorn_droidspaces_ksu-next.zip"
+OUT_ZIP="$REPO_ROOT/dist/AnyKernel3_zorn_droidspaces.zip"
 
 info() { printf '[codespace] %s\n' "$*"; }
 die() { printf '[codespace] ERROR: %s\n' "$*" >&2; exit 1; }
@@ -99,7 +99,7 @@ package() {
     [ -f "$IMAGE" ] || die "No built Image at $IMAGE; run build first"
     mkdir -p "$RUNNER_TEMP"
     IMAGE="$IMAGE" OUT_ZIP="$OUT_ZIP" DEVICE_CODENAME=zorn \
-        KERNEL_STRING="Droidspaces + KernelSU-Next (6.1)" \
+        KERNEL_STRING="Droidspaces (6.1)" \
         RUNNER_TEMP="$RUNNER_TEMP" \
         bash "$REPO_ROOT/scripts/package-anykernel3.sh"
 }
@@ -112,11 +112,14 @@ check() {
                   CONFIG_NAMESPACES CONFIG_DEVTMPFS CONFIG_CGROUPS; do
         grep -qx "$symbol=y" "$OUT_DIR/.config" || die "$symbol is not enabled"
     done
-    if [ "${ROOT_SOLUTION:-ksu-next}" != none ]; then
-        grep -qx 'CONFIG_KSU=y' "$OUT_DIR/.config" || die "CONFIG_KSU is not enabled"
+    if grep -qE '^CONFIG_KSU[A-Z0-9_]*=(y|m)$' "$OUT_DIR/.config"; then
+        die "KernelSU must not be enabled"
     fi
     unzip -tq "$OUT_ZIP" >/dev/null || die "Package is corrupt"
     unzip -Z1 "$OUT_ZIP" | grep -qx 'Image.gz' || die "Package lacks Image.gz"
+    if ! unzip -p "$OUT_ZIP" Image.gz | gzip -dc | cmp -s "$IMAGE" -; then
+        die "Packaged kernel differs from the built Image; run package again"
+    fi
     info "Image: $IMAGE"
     info "Package: $OUT_ZIP"
     info "Config and archive checks passed"

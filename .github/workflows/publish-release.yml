@@ -19,7 +19,7 @@ on:
       tag:
         description: Release tag to publish into
         required: false
-        default: droidspaces-ksu-next-6.1-zorn
+        default: droidspaces-6.1-zorn
       create_if_missing:
         description: Create the release if the tag does not exist yet
         required: false
@@ -60,9 +60,9 @@ jobs:
           set -euo pipefail
           # The AnyKernel3 zip keeps its name; the raw Image has no extension, so
           # match on the basename. Fail here rather than publishing nothing.
-          ZIP="$(find dist -type f -name '*AnyKernel3*.zip' | head -1)"
+          ZIP="$(find dist -type f -name 'AnyKernel3_zorn_droidspaces.zip' | head -1)"
           IMG="$(find dist -type f -name 'Image' | head -1)"
-          [ -n "$ZIP" ] || { echo "::error::no AnyKernel3 zip in the artifacts"; exit 1; }
+          [ -n "$ZIP" ] || { echo "::error::no Droidspaces-only AnyKernel3 zip in the artifacts"; exit 1; }
           [ -n "$IMG" ] || { echo "::error::no kernel Image in the artifacts"; exit 1; }
           echo "zip=$ZIP" >>"$GITHUB_OUTPUT"
           echo "img=$IMG" >>"$GITHUB_OUTPUT"
@@ -88,8 +88,7 @@ jobs:
             fi
             cat >notes.md <<EOF
           GKI 6.1 kernel for the Redmi K80 / POCO F7 Pro (\`zorn\`), built for
-          [Droidspaces](https://github.com/ravindu644/Droidspaces-OSS) containers
-          with KernelSU-Next for root.
+          [Droidspaces](https://github.com/ravindu644/Droidspaces-OSS) containers.
 
           ## Flash this
 
@@ -103,12 +102,12 @@ jobs:
           | KMI | generation 11, matches \`6.1.x-android14-11-*\` |
           | Source | \`cnmrlin/android_kernel_xiaomi_sm8650\` @ \`lineage-24.0\` |
           | Toolchain | clang-r487747c (the version the tree pins) |
-          | Root | KernelSU-Next, kprobes mode |
+          | Integrated root | None |
 
           Built by GitHub Actions, run [$RUN_ID](https://github.com/$GITHUB_REPOSITORY/actions/runs/$RUN_ID).
           The build fails rather than shipping a kernel Droidspaces would reject,
           so CONFIG_SYSVIPC, CONFIG_IPC_NS, CONFIG_PID_NS, CONFIG_UTS_NS,
-          CONFIG_DEVTMPFS and CONFIG_KSU were verified present before compiling.
+          and CONFIG_DEVTMPFS were verified present before compiling.
 
           ## The kABI patch
 
@@ -123,7 +122,6 @@ jobs:
 
           \`\`\`bash
           su -c droidspaces check     # namespaces, cgroups, devtmpfs
-          su -c ksu --version         # or open the KernelSU-Next manager
           \`\`\`
 
           \`droidspaces check\` calls \`unshare()\` against the running kernel instead of
@@ -141,7 +139,7 @@ jobs:
           public sources and is reproducible from this repo.
           EOF
             gh release create "$TAG" --repo "$GITHUB_REPOSITORY" \
-              --title "Droidspaces + KernelSU-Next (6.1, zorn)" \
+              --title "Droidspaces (6.1, zorn)" \
               --notes-file notes.md \
               "$ZIP" "$IMG"
           fi

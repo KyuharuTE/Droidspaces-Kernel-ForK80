@@ -13,7 +13,7 @@ set -euo pipefail
 IMAGE="${IMAGE:?IMAGE must point at the built Image}"
 OUT_ZIP="${OUT_ZIP:?OUT_ZIP must be the output zip path}"
 DEVICE_CODENAME="${DEVICE_CODENAME:-zorn}"
-KERNEL_STRING="${KERNEL_STRING:-Droidspaces + KernelSU-Next}"
+KERNEL_STRING="${KERNEL_STRING:-Droidspaces}"
 RUNNER_TEMP="${RUNNER_TEMP:-/tmp}"
 # WildKernels' GKI fork ships sane defaults for A/B dynamic-partition devices.
 # Upstream osm0sis/master still carries Galaxy Nexus defaults and needs them

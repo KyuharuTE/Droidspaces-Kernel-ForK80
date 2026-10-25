@@ -1,25 +1,11 @@
 #!/usr/bin/env bash
 #
-# Build a Droidspaces-capable, KernelSU-Next rooted Android GKI kernel.
+# Build a Droidspaces-capable Android GKI kernel without an integrated root driver.
 #
 # Target: Linux 6.1 (android14-6.1), arm64, KMI generation 11, zorn (Redmi K80).
 #
-# Design notes, each one learned the hard way:
-#
-# 1. Config goes in a fragment merged with merge_config.sh, never appended to
-#    gki_defconfig. AOSP's check_defconfig runs savedefconfig and diffs the
-#    result against gki_defconfig, and CONFIG_KSU is "default y" so
-#    savedefconfig deletes it, guaranteeing a diff and a failed build. Raw
-#    make never runs that check, and a fragment keeps gki_defconfig pristine.
-#
-# 2. CFI and LTO are left exactly as the tree set them. KernelSU handles KCFI
-#    on 6.1 through symbol_resolver.c, and turning CFI off changes struct
-#    layouts that the stock vendor modules were compiled against. Disabling it
-#    would trade a working root for a bootloop.
-#
-# 3. Module signing is not touched. CONFIG_MODULE_SIG=y is fine because
-#    CONFIG_MODULE_SIG_FORCE is unset, and this tree's own Kconfig makes
-#    MODULE_SIG_PROTECT depend on !MODULE_SIG_FORCE.
+# Config is merged from a fragment to keep gki_defconfig unchanged. CFI and
+# LTO retain the source tree defaults; module signing is configured below.
 #
 # SPDX-License-Identifier: GPL-2.0-or-later
 
@@ -28,13 +14,6 @@ set -euo pipefail
 KERNEL_ROOT="${KERNEL_ROOT:-$PWD}"
 OUT_DIR="${OUT_DIR:-$KERNEL_ROOT/out}"
 CONFIG_FRAGMENT="${CONFIG_FRAGMENT:-}"
-
-# Root solution: ksu-next | none
-ROOT_SOLUTION="${ROOT_SOLUTION:-ksu-next}"
-# KernelSU-Next has no "main" branch. "dev" is the default branch; "next" was
-# renamed to "legacy". A wrong ref does NOT fail loudly because setup.sh ends in
-# `git checkout "$1" || echo fallback`, so the ref is validated below instead.
-KSU_REF="${KSU_REF:-dev}"
 
 RUNNER_TEMP="${RUNNER_TEMP:-/tmp}"
 
@@ -78,26 +57,11 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# 2. KernelSU-Next.
+# 2. Reject cached source trees that still integrate KernelSU.
 # ---------------------------------------------------------------------------
-if [ "$ROOT_SOLUTION" = "ksu-next" ]; then
-    SETUP_URL="https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/${KSU_REF}/kernel/setup.sh"
-    info "Validating KernelSU-Next ref '$KSU_REF'"
-    curl -LSsf -o "$RUNNER_TEMP/ksu-setup.sh" "$SETUP_URL" \
-        || die "No setup.sh at ref '$KSU_REF'. KernelSU-Next uses 'dev', not 'main'."
-
-    info "Installing KernelSU-Next ($KSU_REF)"
-    [ -d KernelSU-Next ] || bash "$RUNNER_TEMP/ksu-setup.sh" "$KSU_REF" \
-        || die "KernelSU-Next setup failed"
-
-    # setup.sh checks common/drivers first (GKI 2.0 layout) and falls back to
-    # drivers/. It symlinks drivers/kernelsu and edits drivers/Makefile and
-    # drivers/Kconfig. Verify all three landed.
-    [ -d KernelSU-Next ] || die "KernelSU-Next directory missing"
-    [ -e drivers/kernelsu ] || die "drivers/kernelsu symlink missing"
-    grep -q 'kernelsu' drivers/Makefile || die "drivers/Makefile not patched"
-    grep -q 'drivers/kernelsu/Kconfig' drivers/Kconfig || die "drivers/Kconfig not patched"
-    info "KernelSU-Next wired into drivers/"
+if [ -e drivers/kernelsu ] || [ -L drivers/kernelsu ] || \
+   grep -qi 'kernelsu' drivers/Makefile drivers/Kconfig; then
+    die "KernelSU is still integrated in this source tree. Remove its driver and Kconfig/Makefile entries before building."
 fi
 
 # ---------------------------------------------------------------------------
@@ -124,14 +88,6 @@ if [ -n "$CONFIG_FRAGMENT" ]; then
         "$OUT_DIR/.config" "$CONFIG_FRAGMENT" >/dev/null || die "merge_config failed"
 fi
 
-# CONFIG_KSU depends on KPROBES && EXT4_FS, both already =y in GKI 6.1, and the
-# symbol is "default y", so it enables itself. Set it explicitly anyway so the
-# resulting .config can be read as a statement of intent.
-if [ "$ROOT_SOLUTION" != "none" ]; then
-    info "Enabling CONFIG_KSU"
-    set_config CONFIG_KSU y "$OUT_DIR/.config"
-fi
-
 # Module signing is turned off, for two independent reasons.
 #
 # 1. It does not build here. certs/extract-cert.c fails against OpenSSL 3.x with
@@ -154,6 +110,9 @@ done
 
 info "Resolving the config with olddefconfig"
 make "${MAKE_COMMON[@]}" olddefconfig >/dev/null || die "olddefconfig failed"
+if grep -qE '^CONFIG_KSU[A-Z0-9_]*=(y|m)$' "$OUT_DIR/.config"; then
+    die "KernelSU options must not be enabled in this build"
+fi
 
 # Surface any fragment symbol the tree does not know about, rather than
 # silently shipping a kernel with the option missing.
@@ -195,10 +154,6 @@ check_y CONFIG_UTS_NS      "containers cannot start without it"
 check_y CONFIG_NAMESPACES  "containers cannot start without it"
 check_y CONFIG_DEVTMPFS    "Droidspaces sets up /dev from this"
 check_y CONFIG_CGROUPS     "container resource isolation"
-check_y CONFIG_EXT4_FS     "KernelSU depends on it"
-check_y CONFIG_KPROBES     "KernelSU depends on it"
-[ "$ROOT_SOLUTION" != "none" ] && check_y CONFIG_KSU "KernelSU"
-
 [ "$FAILED" = "0" ] || die "Required symbols missing. Stopping before compilation."
 
 info "Optional symbols (report only)"

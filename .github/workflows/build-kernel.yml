@@ -1,7 +1,7 @@
-name: Build Droidspaces + KernelSU-Next kernel
+name: Build Droidspaces kernel
 
 # Builds an arm64 GKI Image for zorn (Redmi K80 / POCO F7 Pro) with the
-# Droidspaces kABI patch and config set, plus KernelSU-Next, and packages it as
+# Droidspaces kABI patch and config set, and packages it as
 # a flashable AnyKernel3 zip.
 #
 # Source tree note: the official MiCode/Xiaomi_Kernel_OpenSource@bsp-zorn-v-oss
@@ -21,16 +21,6 @@ on:
         description: Kernel source branch
         required: false
         default: lineage-24.0
-      root_solution:
-        description: Root solution to integrate
-        required: false
-        type: choice
-        options: [ksu-next, none]
-        default: ksu-next
-      ksu_ref:
-        description: KernelSU-Next ref (dev branch or a tag like v3.4.0)
-        required: false
-        default: dev
       remove_protected_exports:
         description: Remove the GKI protected-exports list (only if vendor modules fail with EACCES)
         required: false
@@ -52,8 +42,6 @@ jobs:
     env:
       KERNEL_REPO: ${{ inputs.kernel_repo || 'https://github.com/cnmrlin/android_kernel_xiaomi_sm8650.git' }}
       KERNEL_BRANCH: ${{ inputs.kernel_branch || 'lineage-24.0' }}
-      ROOT_SOLUTION: ${{ inputs.root_solution || 'ksu-next' }}
-      KSU_REF: ${{ inputs.ksu_ref || 'dev' }}
       DEVICE_CODENAME: zorn
       # Pinned to the tree's own build.config.constants CLANG_VERSION for
       # android14-6.1, so the compiler matches what the kernel was written for.
@@ -179,32 +167,31 @@ jobs:
           chmod +x scripts/build-kernel.sh
           KERNEL_ROOT="$KERNEL_ROOT" OUT_DIR="$OUT_DIR" \
           CONFIG_FRAGMENT="$CONFIG_FRAGMENT" \
-          ROOT_SOLUTION="$ROOT_SOLUTION" KSU_REF="$KSU_REF" \
           bash scripts/build-kernel.sh
 
       - name: Package AnyKernel3 zip
         env:
           IMAGE: ${{ github.workspace }}/kernel/out/arch/arm64/boot/Image
-          OUT_ZIP: ${{ github.workspace }}/out/AnyKernel3_zorn_droidspaces_ksu-next.zip
+          OUT_ZIP: ${{ github.workspace }}/out/AnyKernel3_zorn_droidspaces.zip
         run: |
           chmod +x scripts/package-anykernel3.sh
           IMAGE="$IMAGE" OUT_ZIP="$OUT_ZIP" \
           DEVICE_CODENAME="$DEVICE_CODENAME" \
-          KERNEL_STRING="Droidspaces + KernelSU-Next (6.1)" \
+          KERNEL_STRING="Droidspaces (6.1)" \
           bash scripts/package-anykernel3.sh
 
       - name: Upload kernel Image
         uses: actions/upload-artifact@v4
         with:
-          name: Image-zorn-droidspaces-ksu-next
+          name: Image-zorn-droidspaces
           path: kernel/out/arch/arm64/boot/Image
           if-no-files-found: error
 
       - name: Upload AnyKernel3 zip
         uses: actions/upload-artifact@v4
         with:
-          name: AnyKernel3-zorn-droidspaces-ksu-next
-          path: out/AnyKernel3_zorn_droidspaces_ksu-next.zip
+          name: AnyKernel3-zorn-droidspaces
+          path: out/AnyKernel3_zorn_droidspaces.zip
           if-no-files-found: error
 
       - name: Upload build config
@@ -234,15 +221,14 @@ jobs:
           REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
-          TAG="droidspaces-ksu-next-6.1-zorn"
+          TAG="droidspaces-6.1-zorn"
 
           echo "Artifacts:"
           find dist -type f -printf '  %p  %s bytes\n'
 
           cat >notes.md <<EOF
           GKI 6.1 kernel for the Redmi K80 / POCO F7 Pro (\`zorn\`), built for
-          [Droidspaces](https://github.com/ravindu644/Droidspaces-OSS) containers with
-          KernelSU-Next for root.
+          [Droidspaces](https://github.com/ravindu644/Droidspaces-OSS) containers.
 
           ## Flash this
 
@@ -255,11 +241,11 @@ jobs:
           | KMI | generation 11, matches \`6.1.x-android14-11-*\` |
           | Source | \`${KERNEL_REPO:-cnmrlin/android_kernel_xiaomi_sm8650}\` |
           | Toolchain | clang-r487747c |
-          | Root | KernelSU-Next, kprobes mode |
+          | Integrated root | None |
 
           Built by GitHub Actions from commit \`${GITHUB_SHA}\`. The build fails rather
           than shipping a kernel Droidspaces would reject, so CONFIG_SYSVIPC,
-          CONFIG_IPC_NS, CONFIG_PID_NS, CONFIG_UTS_NS, CONFIG_DEVTMPFS and CONFIG_KSU
+          CONFIG_IPC_NS, CONFIG_PID_NS, CONFIG_UTS_NS and CONFIG_DEVTMPFS
           were all verified present before compiling.
 
           ## The kABI patch
@@ -274,7 +260,6 @@ jobs:
 
           \`\`\`bash
           su -c droidspaces check     # namespaces, cgroups, devtmpfs
-          su -c ksu --version         # or open the KernelSU-Next manager
           \`\`\`
 
           \`droidspaces check\` calls \`unshare()\` against the running kernel rather than
@@ -294,14 +279,14 @@ jobs:
           if gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1; then
             echo "Release $TAG exists, uploading with --clobber"
             gh release upload "$TAG" --repo "$REPO" --clobber \
-              dist/AnyKernel3-zorn-droidspaces-ksu-next/*.zip \
-              dist/Image-zorn-droidspaces-ksu-next/Image
+              dist/AnyKernel3-zorn-droidspaces/*.zip \
+              dist/Image-zorn-droidspaces/Image
           else
             gh release create "$TAG" --repo "$REPO" \
-              --title "Droidspaces + KernelSU-Next (6.1, zorn)" \
+              --title "Droidspaces (6.1, zorn)" \
               --notes-file notes.md \
-              dist/AnyKernel3-zorn-droidspaces-ksu-next/*.zip \
-              dist/Image-zorn-droidspaces-ksu-next/Image
+              dist/AnyKernel3-zorn-droidspaces/*.zip \
+              dist/Image-zorn-droidspaces/Image
           fi
 
           echo "Release URL:"

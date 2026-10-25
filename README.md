@@ -1,8 +1,8 @@
 # Droidspaces kernel for Redmi K80 (zorn)
 
 An Android GKI kernel for the Redmi K80 / POCO F7 Pro that runs
-[Droidspaces](https://github.com/ravindu644/Droidspaces-OSS) containers, built
-with KernelSU-Next for root, compiled in a GitHub Codespace and delivered as a
+[Droidspaces](https://github.com/ravindu644/Droidspaces-OSS) containers, compiled
+in a GitHub Codespace and delivered as a
 flashable AnyKernel3 zip.
 
 ## What this actually is
@@ -19,11 +19,11 @@ The target kernel reports `6.1.157-android14-11-g2de7246565ac-mi`:
 | ACK branch | `android14-6.1` |
 | KMI generation | 11 (the `-android14-11-` in the string) |
 | Device | zorn, Redmi K80 / POCO F7 Pro, Snapdragon 8 Gen 3 |
-| Root | KernelSU-Next |
+| Integrated root | None |
 
-## Why two things have to be patched
+## Why the kABI patch is required
 
-**1. The kABI problem.** Droidspaces needs `CONFIG_SYSVIPC` and `CONFIG_IPC_NS`.
+Droidspaces needs `CONFIG_SYSVIPC` and `CONFIG_IPC_NS`.
 Enabling them naively moves fields inside `struct task_struct`, which changes the
 offsets that Xiaomi's prebuilt vendor modules (GPU, camera, Wi-Fi) were compiled
 against. Those modules then dereference garbage and the device bootloops.
@@ -51,29 +51,17 @@ cannot express "whatever happens to be here", so the script scans which slots ar
 free and rewrites those lines. It refuses to continue if it cannot verify the
 result.
 
-**2. KernelSU needs `CONFIG_KSU`.** That symbol is `default y` and depends on
-`KPROBES && EXT4_FS`, both already enabled in GKI, so it largely enables itself.
-
 ## Why a config fragment and not `gki_defconfig`
 
-The Droidspaces docs say to edit `arch/arm64/configs/gki_defconfig` directly.
-That advice is correct for a Droidspaces-only build, but it breaks as soon as
-KernelSU is involved, and the reason is non-obvious:
+The Droidspaces options are merged from `kernel-configs/droidspaces-gki.config`
+after generating the base GKI config. This keeps the source tree's
+`gki_defconfig` unchanged and makes the container-specific options easy to review.
+`olddefconfig` resolves dependencies before the build checks required symbols.
 
-AOSP's `build.config.gki` runs `POST_DEFCONFIG_CMDS="check_defconfig"`, which
-does `make savedefconfig` and diffs the result against `gki_defconfig`. And
-`scripts/kconfig/confdata.c` skips any symbol whose value equals its default:
-
-```c
-/* If symbol equals to default value - skip */
-if (strcmp(sym_get_string_value(sym), sym_get_string_default(sym)) == 0)
-        goto next_menu;
-```
-
-`CONFIG_KSU` is `default y`, so `savedefconfig` **deletes the line you added**,
-the diff is non-empty, and the build fails with `savedefconfig does not match`.
-A raw `make` build never runs that check, and a merged fragment never touches
-`gki_defconfig` at all. This repo does the latter.
+KernelSU-Next is not integrated. The build rejects an existing source tree that
+still wires in its driver, and both build and artifact checks reject enabled
+`CONFIG_KSU*` options. Droidspaces operations that require root need a separately
+provided root environment.
 
 ## What is deliberately left alone
 
@@ -81,7 +69,7 @@ These look like they need changing and do not. Each one was verified against the
 tree rather than assumed:
 
 - **`CONFIG_CFI_CLANG`** stays on. 6.1 uses kCFI (`-fsanitize=kcfi`), which does
-  not depend on LTO, and KernelSU ships `USE_KCFI` handling for it. Turning CFI
+  not depend on LTO. Turning CFI
   off changes struct layouts the vendor modules were built against. AOSP disables
   CFI in its `gki_kprobes` variant, but that is for ftrace tracing, not for root.
 - **Module signing** is disabled by `scripts/build-kernel.sh` to work around
@@ -100,7 +88,7 @@ before changing the protected-exports list.
 .github/workflows/build-kernel.yml     optional manual CI build
 scripts/codespace-build.sh             Codespace setup, build, package, checks
 scripts/fix-tree.py            mandatory ABI fix, anchor-based
-scripts/build-kernel.sh                integrate KernelSU, configure, compile
+scripts/build-kernel.sh                configure and compile
 scripts/package-anykernel3.sh          wrap Image into a flashable zip
 kernel-configs/droidspaces-gki.config  the Droidspaces option set
 ```
@@ -132,26 +120,25 @@ Changes to sources, config or compiler can still require recompilation.
 
 The outputs are:
 
-- `dist/AnyKernel3_zorn_droidspaces_ksu-next.zip` — flashable package
+- `dist/AnyKernel3_zorn_droidspaces.zip` — flashable package
 - `.cache/droidspaces/out/arch/arm64/boot/Image` — raw kernel (default `OUT_DIR`)
 - `.cache/droidspaces/out/.config` — resolved configuration
 
 The `kernel/`, `.cache/droidspaces/` and `dist/` paths are ignored by Git. Review source changes in
 `kernel/` separately; they are not part of this configuration repository.
 
-GitHub Actions no longer builds on push. **Actions → Build Droidspaces +
-KernelSU-Next kernel → Run workflow** is available for an optional clean build
+GitHub Actions no longer builds on push. **Actions → Build Droidspaces kernel →
+Run workflow** is available for an optional clean build
 and artifact upload. The separate publish workflow still accepts artifacts
 from an existing Actions run; it does not publish Codespace files.
 
 Flash the AnyKernel3 zip from a custom recovery or Kernel Flasher. It replaces
 only `boot.img`, so `vendor_dlkm` keeps the stock modules.
 
-After booting, verify both halves:
+After booting, verify container support in your root environment:
 
 ```bash
 su -c droidspaces check     # namespaces, cgroups, devtmpfs
-su -c ksu --version         # or open the KernelSU-Next manager
 ```
 
 `droidspaces check` probes the running kernel by calling `unshare()` rather than
