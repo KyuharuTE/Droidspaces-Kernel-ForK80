@@ -115,11 +115,17 @@ check() {
     if grep -qE '^CONFIG_KSU[A-Z0-9_]*=(y|m)$' "$OUT_DIR/.config"; then
         die "KernelSU must not be enabled"
     fi
+    local kernel_release
+    [ -s "$OUT_DIR/include/config/kernel.release" ] || die "Missing kernel release metadata"
+    kernel_release="$(cat "$OUT_DIR/include/config/kernel.release")"
+    [[ "$kernel_release" == *-nbkernel ]] || die "Kernel release must end with -nbkernel"
+    grep -aqF "Linux version $kernel_release " "$IMAGE" || die "Image does not contain the expected kernel release"
     unzip -tq "$OUT_ZIP" >/dev/null || die "Package is corrupt"
     unzip -Z1 "$OUT_ZIP" | grep -qx 'Image.gz' || die "Package lacks Image.gz"
     if ! unzip -p "$OUT_ZIP" Image.gz | gzip -dc | cmp -s "$IMAGE" -; then
         die "Packaged kernel differs from the built Image; run package again"
     fi
+    info "Kernel release: $kernel_release"
     info "Image: $IMAGE"
     info "Package: $OUT_ZIP"
     info "Config and archive checks passed"

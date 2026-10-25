@@ -21,6 +21,12 @@ The target kernel reports `6.1.157-android14-11-g2de7246565ac-mi`:
 | Device | zorn, Redmi K80 / POCO F7 Pro, Snapdragon 8 Gen 3 |
 | Integrated root | None |
 
+Built kernels append `-nbkernel` to the complete release string, after the
+Android/KMI, Git and build-number fields. For example:
+`6.1.176-android14-11-g0b76321acf29-dirty-ab14529422-nbkernel`.
+`scripts/fix-tree.py` applies this change to the version generator, and the
+build checks enforce the suffix and the kernel's 64-character release limit.
+
 ## Why the kABI patch is required
 
 Droidspaces needs `CONFIG_SYSVIPC` and `CONFIG_IPC_NS`.

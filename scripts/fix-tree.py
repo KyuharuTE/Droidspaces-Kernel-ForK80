@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Give this kernel tree ABI-safe CONFIG_SYSVIPC support.
+Give this kernel tree ABI-safe CONFIG_SYSVIPC support and an nbkernel suffix.
 
 What this does
 --------------
@@ -46,6 +46,23 @@ def die(msg: str) -> None:
 
 def info(msg: str) -> None:
     print(f"\n[INFO] {msg}")
+
+
+def fix_kernel_release_suffix(root: Path) -> None:
+    """Append branding after Android, SCM and build-number version fields."""
+    script = root / "scripts/setlocalversion"
+    if not script.is_file():
+        die(f"Missing kernel version generator: {script}")
+    data = script.read_bytes()
+    branded_line = b'echo "${res}-nbkernel"'
+    if data.rstrip(b"\r\n").splitlines()[-1:] == [branded_line]:
+        info("Kernel release already ends with -nbkernel")
+        return
+    ending = re.search(rb'(?m)^echo "\$res"(?P<eol>(?:\r?\n)*)\Z', data)
+    if ending is None:
+        die("Unexpected scripts/setlocalversion ending; cannot append -nbkernel safely")
+    script.write_bytes(data[: ending.start()] + branded_line + ending.group("eol"))
+    info("Appended -nbkernel after the complete kernel release string")
 
 
 def fix_extract_cert(root: Path) -> None:
@@ -271,6 +288,7 @@ def main() -> None:
     if not sched.is_file():
         die(f"Not a kernel root, missing {SCHED}: {root}")
 
+    fix_kernel_release_suffix(root)
     fix_extract_cert(root)
     verify_extract_cert(root / "certs/extract-cert.c")
 

@@ -113,6 +113,10 @@ make "${MAKE_COMMON[@]}" olddefconfig >/dev/null || die "olddefconfig failed"
 if grep -qE '^CONFIG_KSU[A-Z0-9_]*=(y|m)$' "$OUT_DIR/.config"; then
     die "KernelSU options must not be enabled in this build"
 fi
+resolved_release="$(make --no-print-directory -s "${MAKE_COMMON[@]}" kernelrelease)"
+[[ "$resolved_release" == *-nbkernel ]] || die "Kernel release must end with -nbkernel; run scripts/fix-tree.py first"
+[ "${#resolved_release}" -le 64 ] || die "Kernel release exceeds the 64-character UTS_RELEASE limit"
+info "Kernel release: $resolved_release"
 
 # Surface any fragment symbol the tree does not know about, rather than
 # silently shipping a kernel with the option missing.
