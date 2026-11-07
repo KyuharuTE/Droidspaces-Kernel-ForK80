@@ -7,9 +7,9 @@
 [    0.000000][    T0] earlycon: pl11 at MMIO 0x0000000009000000 (options '')
 [    0.000000][    T0] printk: bootconsole [pl11] enabled
 [    0.000000][    T0] efi: UEFI not found.
-[    0.000000][    T0] KP  _  __                    _ ____       _       _     
-[    0.000000][    T0] | |/ /___ _ __ _ __   ___| |  _ \ __ _| |_ ___| |__  
-[    0.000000][    T0] | ' // _ \ '__| '_ \ / _ \ | |_) / _` | __/ __| '_ \ 
+[    0.000000][    T0] KP  _  __                    _ ____       _       _
+[    0.000000][    T0] | |/ /___ _ __ _ __   ___| |  _ \ __ _| |_ ___| |__
+[    0.000000][    T0] | ' // _ \ '__| '_ \ / _ \ | |_) / _` | __/ __| '_ \
 [    0.000000][    T0] | . \  __/ |  | | | |  __/ |  __/ (_| | || (__| | | |
 [    0.000000][    T0] |_|\_\___|_|  |_| |_|\___|_|_|   \__,_|\__\___|_| |_|
 [    0.000000][    T0] KP Kernel pa: 40200000
@@ -147,7 +147,7 @@
 [    0.091478][    T0] [+] KP V Wrap chain add: ffffffe216e2d128, ffffffe3964c8f20, ffffffe3964c8df0 successed
 [    0.093483][    T0] [+] KP V Wrap func: ffffffe216e2d128 succsseed
 [    0.094681][    T0] KP syscall dispatcher: hooked invoke_syscall at ffffffe216e2d128 (skip_origin supported), global syscall hook enabled
-[    0.097097][    T0] KP current: 
+[    0.097097][    T0] KP current:
 [    0.097782][    T0] KP     sp_el0: ffffffe218e60b00
 [    0.098722][    T0] KP     sp: ffffffe218e43cf0
 [    0.099686][    T0] KP     init_task addr lookup: ffffffe218e60b00
@@ -160,13 +160,13 @@
 [    0.107259][    T0] KP     thread_info_in_task: 1
 [    0.108338][    T0] KP     comm_offset of task: 848
 [    0.109321][    T0] KP     stack offset of task: 38
-[    0.110298][    T0] KP struct task_struct: 
+[    0.110298][    T0] KP struct task_struct:
 [    0.112180][    T0] KP     init_cred addr: ffffffe218e72fa8
 [    0.113332][    T0] KP     cred offset: 830
 [    0.114166][    T0] KP     real_cred offset: 838
 [    0.115206][    T0] KP     seccomp offset: 900
 [    0.116488][    T0] KP     active_mm offset: 5a8
-[    0.120071][    T0] KP struct cred: 
+[    0.120071][    T0] KP struct cred:
 [    0.121480][    T0] KP     full_cap capability: ffffffff
 [    0.122807][    T0] KP     cap_effective offset: 38
 [    0.123753][    T0] KP     cap_inheritable offset: 28
@@ -182,7 +182,7 @@
 [    0.136254][    T0] KP     suid offset: c
 [    0.137849][    T0] KP     sgid offset: 10
 [    0.139446][    T0] KP     cap_ambient offset: 48
-[    0.141168][    T0] KP struct mm_struct: 
+[    0.141168][    T0] KP struct mm_struct:
 [    0.142046][    T0] KP     pgd offset: 38
 [    0.143173][    T0] KP btf loaded, types: 3358428, strs: 2327913
 [    0.144327][    T0] KP struct offsets: overriding with BTF
@@ -321,8 +321,8 @@
 [    0.936795][    T1] printk: bootconsole [pl11] disabled
 [    0.936795][    T1] printk: bootconsole [pl11] disabled
 [    0.982750][    T1] KASLR enabled
-[    1.210760][    T1] iommu: Default domain type: Translated 
-[    1.214567][    T1] iommu: DMA domain TLB invalidation policy: strict mode 
+[    1.210760][    T1] iommu: Default domain type: Translated
+[    1.214567][    T1] iommu: DMA domain TLB invalidation policy: strict mode
 [    1.230088][    T1] SCSI subsystem initialized
 [    1.234345][    T1] usbcore: registered new interface driver usbfs
 [    1.236068][    T1] usbcore: registered new interface driver hub
@@ -442,7 +442,7 @@ SMOKE_HELLO=290984280
 SMOKE_VERSION=3337
 [    3.168924][    T1] [+] KP D load_module_path_event: /demo.kpm
 [    3.170104][    T1] [+] KP D load_module_path_event: module size: d90
-[    3.172149][    T1] [+] KP D loading module: 
+[    3.172149][    T1] [+] KP D loading module:
 [    3.172849][    T1] [+] KP D     name: kpm-nbdemo
 [    3.173584][    T1] [+] KP D     version: 1.0.0
 [    3.174278][    T1] [+] KP D     license: GPL v2
@@ -462,7 +462,7 @@ SMOKE_VERSION=3337
 [    3.188445][    T1] [+] KP D     .strtab ffffffe3968033ad f1
 [    3.189912][    T1] kpm-nbdemo: init, event=load-file args=qemu
 [    3.190811][    T1] kpm-nbdemo: kernelpatch version d09
-[    3.191612][    T1] [+] KP I load_module_ex: [kpm-nbdemo] succeed with [qemu] 
+[    3.191612][    T1] [+] KP I load_module_ex: [kpm-nbdemo] succeed with [qemu]
 SMOKE_LOAD=0
 [    3.194384][    T1] [+] KP D get_module_nums: 1
 SMOKE_NUMS=1

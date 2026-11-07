@@ -41,7 +41,7 @@
 [    0.000000][    T0]  setup_arch+0x150/0x22c
 [    0.000000][    T0]  start_kernel+0x80/0x480
 [    0.000000][    T0]  __primary_switched+0xc8/0xd4
-[    0.000000][    T0] Code: f9455453 f2aa8828 f9455064 f2caca68 (f9403686) 
+[    0.000000][    T0] Code: f9455453 f2aa8828 f9455064 f2caca68 (f9403686)
 [    0.000000][    T0] ---[ end trace 0000000000000000 ]---
 [    0.000000][    T0] Kernel panic - not syncing: Oops: Fatal exception
 [    0.000000][    T0] Reboot failed -- System halted

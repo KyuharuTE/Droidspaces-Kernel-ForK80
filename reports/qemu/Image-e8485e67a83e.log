@@ -141,8 +141,8 @@
 [    0.994546][    T1] printk: bootconsole [pl11] disabled
 [    0.994546][    T1] printk: bootconsole [pl11] disabled
 [    1.021323][    T1] KASLR disabled on command line
-[    1.234163][    T1] iommu: Default domain type: Translated 
-[    1.235574][    T1] iommu: DMA domain TLB invalidation policy: strict mode 
+[    1.234163][    T1] iommu: Default domain type: Translated
+[    1.235574][    T1] iommu: DMA domain TLB invalidation policy: strict mode
 [    1.245486][    T1] SCSI subsystem initialized
 [    1.249221][    T1] usbcore: registered new interface driver usbfs
 [    1.250867][    T1] usbcore: registered new interface driver hub
