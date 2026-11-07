@@ -217,6 +217,24 @@ def main() -> None:
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes(fetch(f"{RAW}/{KP_REPO}/{KP_REF}/{path}"))
 
+    # hook/hook_engine.c #includes ../../kernel/base/hook.c literally, so that
+    # translation unit needs the base/ sources too. Vendor the directory and
+    # repoint the include rather than copying a file out of its own tree.
+    base_files = list_tree("kernel/base")
+    info(f"{len(base_files)} files from kernel/base (hook_engine includes one directly)")
+    for path, _size in base_files:
+        rel = path[len("kernel/") :]
+        target = dest / "kpinclude" / rel
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(fetch(f"{RAW}/{KP_REPO}/{KP_REF}/{path}"))
+
+    hook_engine = dest / "hook/hook_engine.c"
+    text = hook_engine.read_text(encoding="utf-8")
+    if "../../kernel/base/" in text:
+        text = text.replace("../../kernel/base/", "../../kpinclude/base/")
+        hook_engine.write_text(text, encoding="utf-8")
+        info("Repointed hook_engine.c at the vendored kernel/base")
+
     (dest / "version").write_bytes(fetch(f"{RAW}/{KP_REPO}/{KP_REF}/version"))
 
     # --- rewrite the Kbuild include paths ---------------------------------
