@@ -1,19 +1,25 @@
 #!/usr/bin/env bash
 #
-# Build a kernel with KernelPatch compiled in, so the resulting Image can load
-# .kpm modules directly. No image patching, no boot.img repack, no kptools.
+# Build a kernel that can load .kpm modules, and hand back a patched Image.
 #
-# Contrast with scripts/kpm-patch-image.sh, which does the opposite: it leaves
-# the kernel build alone and appends a payload to a finished Image. That works,
-# but it is a step outside the build. This script makes KPM support part of the
-# build, so `make Image` already produces a kernel that has the supercall and the
-# KPM loader.
+# This is the kpimg route: compile normally, then have kptools append the
+# KernelPatch payload to the finished Image and redirect primary_entry to it.
 #
-# The superkey is baked into the kernel at vendor time, so it must be decided
-# before the build and must match what the manager app sends.
+# Why not compile KernelPatch into the kernel instead
+# ---------------------------------------------------
+# That was tried and it bootlooped on the first screen. The vendored `lkm/` tree
+# is a skeleton, not a deliverable: its own README lists the inline-hook infra
+# and sucompat as unimplemented, and it is written to be insmod'd into a running
+# system. As an initcall it runs during early boot, where it hooks the syscall
+# table and LSM before /data exists and before the executable-memory allocator it
+# needs is ready. Spreading that code into vmlinux also drags in the image-patch
+# hook engine without the base/ runtime that engine expects.
 #
-# Usage:
-#   SUPERKEY='...' bash scripts/kpm-integrated-build.sh
+# kpimg exists for exactly this job, and it runs at the point the kernel is ready
+# for it, not at initcall time.
+#
+# Requirements on the Image, checked rather than assumed:
+#   CONFIG_KALLSYMS=y     kpimg resolves kernel functions by name at boot
 #
 # SPDX-License-Identifier: GPL-2.0-or-later
 
@@ -23,87 +29,92 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 KERNEL_ROOT="${KERNEL_ROOT:-$REPO_ROOT/kernel}"
 OUT_DIR="${OUT_DIR:-$KERNEL_ROOT/out}"
 SUPERKEY="${SUPERKEY:-}"
+KP_DIR="${KP_DIR:-$REPO_ROOT/.kp/KernelPatch}"
+KP_REF="${KP_REF:-main}"
+CROSS="${CROSS:-aarch64-linux-gnu-}"
+OUT_IMAGE="${OUT_IMAGE:-$REPO_ROOT/dist/Image.kpm}"
 
 info() { printf '\n[INFO] %s\n' "$*"; }
 die()  { printf '\n[FAIL] %s\n' "$*" >&2; exit 1; }
 
-[ -f "$KERNEL_ROOT/Makefile" ] || die "No kernel source at $KERNEL_ROOT. Run scripts/codespace-build.sh setup first."
-[ -n "$SUPERKEY" ] || die "SUPERKEY is not set. It is compiled into the kernel and must match the manager app's key."
+[ -f "$KERNEL_ROOT/Makefile" ] || die "no kernel source at $KERNEL_ROOT"
+[ -n "$SUPERKEY" ] || die "SUPERKEY is not set; it is compiled into the payload"
+[ "${#SUPERKEY}" -le 64 ] || die "SUPERKEY exceeds the 64-byte KernelPatch limit"
 
-# --- 1. Vendor KernelPatch ------------------------------------------------
+MAKE_ARGS=(-C "$KERNEL_ROOT" O="$OUT_DIR" ARCH=arm64 LLVM=1 LLVM_IAS=1 HOSTCC=gcc)
+
+# --- 1. Kernel ------------------------------------------------------------
 #
-# Idempotent: re-running re-clones and re-applies the superkey, which is what
-# you want after changing the key.
-info "Vendoring KernelPatch with the compiled-in superkey"
-python3 "$REPO_ROOT/scripts/vendor-kpatch.py" "$KERNEL_ROOT" "$SUPERKEY" \
-    || die "vendoring failed"
-
-# --- 2. Configure ---------------------------------------------------------
-MAKE_ARGS=(
-    -C "$KERNEL_ROOT"
-    O="$OUT_DIR"
-    ARCH=arm64
-    LLVM=1
-    LLVM_IAS=1
-    HOSTCC=gcc
-)
-
-info "Generating the base config"
-make "${MAKE_ARGS[@]}" gki_defconfig >/dev/null || die "gki_defconfig failed"
-
-FRAGMENT="$REPO_ROOT/kernel-configs/droidspaces-gki.config"
-info "Merging $FRAGMENT"
-"$KERNEL_ROOT/scripts/kconfig/merge_config.sh" -m -O "$OUT_DIR" \
-    "$OUT_DIR/.config" "$FRAGMENT" >/dev/null || die "merge_config failed"
-
-# The fragment already sets CONFIG_KP_LKM=y; set it again explicitly so a build
-# with an older checkout of the fragment still produces a KPM-capable kernel.
-for sym in CONFIG_KP_LKM; do
-    if grep -qE "^${sym}=" "$OUT_DIR/.config"; then
-        sed -i -E "s|^${sym}=.*|${sym}=y|" "$OUT_DIR/.config"
-    else
-        printf '%s=y\n' "$sym" >>"$OUT_DIR/.config"
-    fi
-done
-
-make "${MAKE_ARGS[@]}" olddefconfig >/dev/null || die "olddefconfig failed"
-
-# --- 3. Verify it is really going to be in the kernel ---------------------
-#
-# KP_LKM is a bool now, not a tristate, so the only valid value is y. If it
-# silently went away, the loader will be missing at boot and the failure would
-# only show up on the device.
-FAILED=0
-check_y() {
-    local sym="$1" desc="$2"
-    if grep -qE "^${sym}=y" "$OUT_DIR/.config"; then
-        printf '  \033[1;32mOK\033[0m      %-28s %s\n' "$sym" "$desc"
-    else
-        printf '  \033[1;31mMISSING\033[0m %-28s %s\n' "$sym" "$desc"
-        FAILED=1
-    fi
-}
-
-info "Verifying KPM support is enabled"
-check_y CONFIG_KP_LKM   "the KernelPatch driver is compiled in"
-check_y CONFIG_KALLSYMS "the loader resolves KPM symbols by name"
-[ "$FAILED" = "0" ] || die "KPM support is not enabled in this config"
-
-# --- 4. Build -------------------------------------------------------------
-info "Compiling"
-make "${MAKE_ARGS[@]}" -j"${BUILD_JOBS:-$(nproc)}" Image || die "kernel build failed"
+# build-kernel.sh owns the config work: it applies the Droidspaces fragment,
+# checks every symbol Droidspaces probes at runtime, and gates the build on them.
+# Doing it here as well would risk the two drifting apart, which is how the
+# bootlooping kernel ended up with module signing on again.
+info "Configuring and compiling the kernel"
+KERNEL_ROOT="$KERNEL_ROOT" OUT_DIR="$OUT_DIR" \
+CONFIG_FRAGMENT="$REPO_ROOT/kernel-configs/droidspaces-gki.config" \
+    bash "$REPO_ROOT/scripts/build-kernel.sh" || die "kernel build failed"
 
 IMAGE="$OUT_DIR/arch/arm64/boot/Image"
 [ -f "$IMAGE" ] || die "no Image at $IMAGE"
 
-# The supercall lives on syscall 45 and the key is a plain literal in the
-# kernel image, so its presence is a cheap end-to-end check that the rewrite
-# actually made it into the build.
-if ! strings -a "$IMAGE" | grep -qF "$SUPERKEY"; then
-    die "the superkey is not present in $IMAGE; the vendored supercall.c may not have been rebuilt"
-fi
-info "Superkey is embedded in the Image"
+grep -qE '^CONFIG_KALLSYMS=y' "$OUT_DIR/.config" \
+    || die "CONFIG_KALLSYMS is off; kpimg cannot resolve symbols and the kernel will hang"
 
-info "Built $IMAGE ($(du -h "$IMAGE" | cut -f1))"
-info "Load .kpm files from the manager app with the same SUPERKEY."
-info "Package with scripts/package-anykernel3.sh as usual."
+# --- 2. KernelPatch host tool and payload ---------------------------------
+if [ ! -d "$KP_DIR/.git" ]; then
+    info "Cloning KernelPatch into $KP_DIR"
+    mkdir -p "$(dirname "$KP_DIR")"
+    git clone --depth 1 --branch "$KP_REF" \
+        https://github.com/bmax121/KernelPatch.git "$KP_DIR" || die "clone failed"
+fi
+
+KPT="$KP_DIR/tools/kptools"
+KPIMG="$KP_DIR/kernel/kpimg"
+
+if [ ! -x "$KPT" ]; then
+    info "Building kptools"
+    command -v cc >/dev/null || die "no host C compiler for kptools"
+    ( cd "$KP_DIR/tools" && ANDROID=1 make -j"$(nproc)" ) || die "kptools build failed"
+fi
+
+# The payload is freestanding, and modern distro GCC turns on the stack protector
+# and PIC by default, so the link fails with __stack_chk_guard and GOT/PLT
+# entries. Command line CFLAGS beats the Makefile's +=, which is what lets the
+# defaults be turned back off.
+KP_CFLAGS="-Wall -fno-builtin -std=gnu11 -nostdinc -mgeneral-regs-only \
+-ffixed-x18 -fno-stack-protector -fno-stack-clash-protection \
+-fno-asynchronous-unwind-tables -fno-pic -mcmodel=large"
+
+if [ ! -f "$KPIMG" ]; then
+    info "Building kpimg with $CROSS"
+    command -v "${CROSS}gcc" >/dev/null \
+        || die "${CROSS}gcc not found; install gcc-aarch64-linux-gnu or set CROSS"
+    ( cd "$KP_DIR/kernel" && TARGET_COMPILE="$CROSS" ANDROID=1 \
+      make -j"$(nproc)" "CFLAGS=$KP_CFLAGS" ) || die "kpimg build failed"
+fi
+info "kpimg: $(du -h "$KPIMG" | cut -f1)"
+
+# --- 3. Patch -------------------------------------------------------------
+mkdir -p "$(dirname "$OUT_IMAGE")"
+
+info "Confirming kptools can read kallsyms from the Image"
+"$KPT" -d -i "$IMAGE" >/dev/null 2>&1 \
+    || die "kptools cannot parse $IMAGE; a stripped Image will not work"
+
+# The key goes in over a file descriptor so it stays out of the process list.
+KEY_FILE="$(mktemp)"
+trap 'rm -f "$KEY_FILE"' EXIT
+chmod 600 "$KEY_FILE"
+printf '%s' "$SUPERKEY" >"$KEY_FILE"
+
+info "Patching the Image with kpimg"
+"$KPT" -p --skey-fd 3 -i "$IMAGE" -k "$KPIMG" -o "$OUT_IMAGE" 3<"$KEY_FILE" \
+    || "$KPT" -p -s "$SUPERKEY" -i "$IMAGE" -k "$KPIMG" -o "$OUT_IMAGE" \
+    || die "kptools failed to patch the Image"
+
+LISTING="$("$KPT" -l -i "$OUT_IMAGE")" || die "cannot read the patch metadata back"
+printf '%s\n' "$LISTING" | grep -q 'patched=true' || die "patch did not take"
+printf '%s\n' "$LISTING" | sed -n 's/^\(version\|arch\)=/  \1=/p'
+
+info "Patched image: $OUT_IMAGE ($(du -h "$OUT_IMAGE" | cut -f1))"
+info "Package it with scripts/package-anykernel3.sh, IMAGE=$OUT_IMAGE"

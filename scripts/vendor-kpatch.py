@@ -346,7 +346,7 @@ def main() -> None:
     # rewriting of indirect calls is exactly what breaks a hook engine.
     kconfig = (dest / "Kconfig").read_text(encoding="utf-8")
     kconfig = kconfig.replace("depends on MODULES && ARM64", "depends on ARM64")
-    kconfig = kconfig.replace("default n", "default y")
+    # Leave it default n: enabling it bootloops. See the warning in README.
     kconfig = kconfig.replace("tristate ", "bool ")
     # Rewrite the whole help body: upstream's describes a DDK-built .ko and
     # APatch-uid authentication, neither of which is true here.
