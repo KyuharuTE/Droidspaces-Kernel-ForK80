@@ -49,6 +49,9 @@ info "Fetching AnyKernel3"
 # makes an A/B device non-slotted. Both are rewritten below. Note AnyKernel3
 # master removed the lowercase aliases (block=, is_slot_device=) in mid-2026, so
 # the uppercase spellings are the only ones that work on master.
+# RUNNER_TEMP is not guaranteed to exist: on a plain shell it defaults to /tmp,
+# but a caller can point it anywhere, and mktemp -d does not create the parent.
+mkdir -p "$RUNNER_TEMP"
 AK3_WORK="$(mktemp -d "$RUNNER_TEMP/anykernel3.XXXXXXXX")"
 trap 'rm -rf "$AK3_WORK"' EXIT
 AK3_DIR="$AK3_WORK/AnyKernel3"
