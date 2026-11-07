@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Foreground layer: a bracket-and-dot motif, scalable vector so no raster
+     assets are needed. 108dp canvas, artwork kept inside the 72dp safe zone. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <path
+        android:fillColor="#5EE1C4"
+        android:pathData="M36,32h-6v44h6v-6h-2V38h2z" />
+    <path
+        android:fillColor="#5EE1C4"
+        android:pathData="M72,32h6v44h-6v-6h2V38h-2z" />
+    <path
+        android:fillColor="#5EE1C4"
+        android:pathData="M54,42m-5,0a5,5 0,1 1,10 0a5,5 0,1 1,-10 0" />
+    <path
+        android:fillColor="#5EE1C4"
+        android:pathData="M54,66m-5,0a5,5 0,1 1,10 0a5,5 0,1 1,-10 0" />
+</vector>

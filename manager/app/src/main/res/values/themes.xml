@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Compose draws everything; this only needs to be a valid Material base
+         so the splash and window background are sane before Compose attaches. -->
+    <style name="Theme.KPManager" parent="android:Theme.Material.NoActionBar" />
+</resources>

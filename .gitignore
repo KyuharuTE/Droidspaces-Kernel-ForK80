@@ -21,3 +21,9 @@ Thumbs.db
 # Python bytecode from the kABI patch script.
 __pycache__/
 *.pyc
+
+# Android manager build output.
+manager/.gradle/
+manager/build/
+manager/app/build/
+manager/local.properties
