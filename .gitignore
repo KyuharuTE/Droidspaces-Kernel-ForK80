@@ -27,3 +27,8 @@ manager/.gradle/
 manager/build/
 manager/app/build/
 manager/local.properties
+
+# Unpacked kernel source build output and release scratch.
+.cache/
+*.cxx/
+.cxx/

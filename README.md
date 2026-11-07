@@ -103,48 +103,28 @@ kpms/nbdemo/                           example KPM
 manager/                               Android app that loads and manages KPMs
 ```
 
-## Loading .kpm modules
+## Loading .kpm modules: attempted, and does not boot
 
-A `.kpm` is not a kernel module and not a kernel config option. It is an arm64
-ELF relocatable object that a runtime maps into kernel space, and that runtime is
-KernelPatch, which provides the supercall (syscall 45) and the KPM loader.
+Read [HANDOVER.md](HANDOVER.md) for the full record. Short version:
 
-### Recommended: compile it into the kernel
+A `.kpm` is not a kernel module and not a config option. It is an arm64 ELF
+relocatable object mapped into kernel space by a runtime, and that runtime is
+KernelPatch, which either patches the built Image (`kptools` + `kpimg`) or is
+compiled into the kernel. Both were tried on this device. **Both failed to reach
+the boot animation**, while the same kernel without KernelPatch boots.
 
-This is one command and needs no image patching afterwards:
+Because `kpimg` takes over at `primary_entry`, before any console or logging
+backend exists, no log of the failure is obtainable without a UART.
 
-```bash
-export SUPERKEY='choose-a-key'
-bash scripts/kpm-integrated-build.sh
-```
+So: **the Droidspaces support works. KPM loading does not.** If you want
+containers, use the `base` release asset and ignore this section.
 
-It vendors KernelPatch's LKM sources into `drivers/kpatch`, turns them into
-ordinary Kbuild objects (`CONFIG_KP_LKM=y`), and builds them into `vmlinux`.
-`make Image` then produces a kernel that already has the supercall and the loader,
-so the AnyKernel3 packaging step is unchanged and there is no `kptools` step.
-
-Vendoring also replaces KernelPatch's own authentication. Upstream scans
-`/data/app` for an APatch manager APK and verifies its signing certificate, which
-ties the kernel to a third-party app; the vendored handler compares a superkey
-compiled in at vendor time instead. The manager app sends exactly that key.
-
-### Alternative: patch a finished Image
-
-`scripts/kpm-patch-image.sh` takes the opposite approach: it appends a payload
-(`kpimg`) to an already built Image and redirects `primary_entry`. Useful when
-the kernel source is not being rebuilt, but it is a step outside the build and
-the Image must be patched before compression.
-
-Either way `.kpm` loading requires `CONFIG_KALLSYMS=y`, since the runtime
-resolves kernel functions by name; both paths check for it rather than producing
-a kernel that fails on the device.
-
-```bash
-bash scripts/build-kpm.sh kpms/nbdemo     # -> dist/kpm/nbdemo.kpm
-cd manager && ./gradlew :app:assembleDebug
-```
-
-See [manager/README.md](manager/README.md) for the app.
+`scripts/kpm-integrated-build.sh`, `scripts/kpm-patch-image.sh`,
+`scripts/build-kpm.sh`, `scripts/vendor-kpatch.py` and `manager/` are kept
+because they are complete and tested as far as the build goes, so the work is not
+lost if this is picked up again with a different source tree or a verified
+device. `vendor-kpatch.py` leaves `CONFIG_KP_LKM` at `default n` deliberately: the
+in-tree route bootloops.
 
 ## Build and test in Codespaces
 
