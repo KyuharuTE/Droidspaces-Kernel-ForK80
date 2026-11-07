@@ -27,7 +27,7 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 KERNEL_ROOT="${KERNEL_ROOT:-$REPO_ROOT/kernel}"
-OUT_DIR="${OUT_DIR:-$KERNEL_ROOT/out}"
+OUT_DIR="${OUT_DIR:-${CACHE_DIR:-$REPO_ROOT/.cache/droidspaces}/out}"
 SUPERKEY="${SUPERKEY:-}"
 KP_DIR="${KP_DIR:-$REPO_ROOT/.kp/KernelPatch}"
 KP_REF="${KP_REF:-main}"
@@ -60,61 +60,9 @@ IMAGE="$OUT_DIR/arch/arm64/boot/Image"
 grep -qE '^CONFIG_KALLSYMS=y' "$OUT_DIR/.config" \
     || die "CONFIG_KALLSYMS is off; kpimg cannot resolve symbols and the kernel will hang"
 
-# --- 2. KernelPatch host tool and payload ---------------------------------
-if [ ! -d "$KP_DIR/.git" ]; then
-    info "Cloning KernelPatch into $KP_DIR"
-    mkdir -p "$(dirname "$KP_DIR")"
-    git clone --depth 1 --branch "$KP_REF" \
-        https://github.com/bmax121/KernelPatch.git "$KP_DIR" || die "clone failed"
-fi
-
-KPT="$KP_DIR/tools/kptools"
-KPIMG="$KP_DIR/kernel/kpimg"
-
-if [ ! -x "$KPT" ]; then
-    info "Building kptools"
-    command -v cc >/dev/null || die "no host C compiler for kptools"
-    ( cd "$KP_DIR/tools" && ANDROID=1 make -j"$(nproc)" ) || die "kptools build failed"
-fi
-
-# The payload is freestanding, and modern distro GCC turns on the stack protector
-# and PIC by default, so the link fails with __stack_chk_guard and GOT/PLT
-# entries. Command line CFLAGS beats the Makefile's +=, which is what lets the
-# defaults be turned back off.
-KP_CFLAGS="-Wall -fno-builtin -std=gnu11 -nostdinc -mgeneral-regs-only \
--ffixed-x18 -fno-stack-protector -fno-stack-clash-protection \
--fno-asynchronous-unwind-tables -fno-pic -mcmodel=large"
-
-if [ ! -f "$KPIMG" ]; then
-    info "Building kpimg with $CROSS"
-    command -v "${CROSS}gcc" >/dev/null \
-        || die "${CROSS}gcc not found; install gcc-aarch64-linux-gnu or set CROSS"
-    ( cd "$KP_DIR/kernel" && TARGET_COMPILE="$CROSS" ANDROID=1 \
-      make -j"$(nproc)" "CFLAGS=$KP_CFLAGS" ) || die "kpimg build failed"
-fi
-info "kpimg: $(du -h "$KPIMG" | cut -f1)"
-
-# --- 3. Patch -------------------------------------------------------------
-mkdir -p "$(dirname "$OUT_IMAGE")"
-
-info "Confirming kptools can read kallsyms from the Image"
-"$KPT" -d -i "$IMAGE" >/dev/null 2>&1 \
-    || die "kptools cannot parse $IMAGE; a stripped Image will not work"
-
-# The key goes in over a file descriptor so it stays out of the process list.
-KEY_FILE="$(mktemp)"
-trap 'rm -f "$KEY_FILE"' EXIT
-chmod 600 "$KEY_FILE"
-printf '%s' "$SUPERKEY" >"$KEY_FILE"
-
-info "Patching the Image with kpimg"
-"$KPT" -p --skey-fd 3 -i "$IMAGE" -k "$KPIMG" -o "$OUT_IMAGE" 3<"$KEY_FILE" \
-    || "$KPT" -p -s "$SUPERKEY" -i "$IMAGE" -k "$KPIMG" -o "$OUT_IMAGE" \
-    || die "kptools failed to patch the Image"
-
-LISTING="$("$KPT" -l -i "$OUT_IMAGE")" || die "cannot read the patch metadata back"
-printf '%s\n' "$LISTING" | grep -q 'patched=true' || die "patch did not take"
-printf '%s\n' "$LISTING" | sed -n 's/^\(version\|arch\)=/  \1=/p'
-
-info "Patched image: $OUT_IMAGE ($(du -h "$OUT_IMAGE" | cut -f1))"
-info "Package it with scripts/package-anykernel3.sh, IMAGE=$OUT_IMAGE"
+# Use one payload builder and patch verifier for both entry points. In
+# particular, never reuse a cached payload compiled with the large code model.
+KERNEL_ROOT="$KERNEL_ROOT" OUT_DIR="$OUT_DIR" IMAGE="$IMAGE" \
+OUT_IMAGE="$OUT_IMAGE" KP_DIR="$KP_DIR" KP_REF="$KP_REF" \
+CROSS="$CROSS" SUPERKEY="$SUPERKEY" \
+    bash "$REPO_ROOT/scripts/kpm-patch-image.sh"

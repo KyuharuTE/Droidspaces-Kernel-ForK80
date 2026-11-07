@@ -1,0 +1,8 @@
+{
+  "manager_version": "1.0.1",
+  "pid": "26003",
+  "connected": true,
+  "ui_status": "KernelPatch connected · 0 module(s)",
+  "crash_fixed": true,
+  "tls_alignment": 64
+}

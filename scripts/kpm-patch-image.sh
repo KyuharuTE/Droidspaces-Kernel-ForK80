@@ -28,7 +28,7 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 KERNEL_ROOT="${KERNEL_ROOT:-$REPO_ROOT/kernel}"
-OUT_DIR="${OUT_DIR:-$KERNEL_ROOT/out}"
+OUT_DIR="${OUT_DIR:-${CACHE_DIR:-$REPO_ROOT/.cache/droidspaces}/out}"
 IMAGE="${IMAGE:-$OUT_DIR/arch/arm64/boot/Image}"
 OUT_IMAGE="${OUT_IMAGE:-$REPO_ROOT/dist/Image.kp}"
 
@@ -38,7 +38,8 @@ KP_REF="${KP_REF:-main}"
 
 # AARCH64_CODE_MODEL: the payload is built for bare metal. Distro GCC is fine
 # here because the payload is freestanding (-nostdinc), it just needs the
-# default flags fixed up for a kernel-resident blob.
+# default flags fixed up for a kernel-resident blob. The payload relocates:
+# large code model embeds link-time addresses and faults after relocation.
 CROSS="${CROSS:-aarch64-linux-gnu-}"
 
 # The superkey authenticates privileged supercalls. Keep it out of argv when you
@@ -50,6 +51,8 @@ info() { printf '\n[INFO] %s\n' "$*"; }
 die()  { printf '\n[FAIL] %s\n' "$*" >&2; exit 1; }
 
 [ -f "$IMAGE" ] || die "No kernel Image at $IMAGE. Build the kernel first."
+python3 "$REPO_ROOT/scripts/check-kernel-config.py" "$OUT_DIR/.config" \
+    || die "A validated baseline .config is required; set OUT_DIR explicitly for other builds"
 [ -n "$SUPERKEY" ] || die "SUPERKEY is not set. Export it, e.g. SUPERKEY='...' bash scripts/kpm-patch-image.sh"
 [ "${#SUPERKEY}" -le 64 ] || die "SUPERKEY is longer than the 64-byte KernelPatch limit"
 
@@ -70,6 +73,10 @@ KPIMG="$KP_DIR/kernel/kpimg"
 if [ ! -x "$KPT_TOOLS" ]; then
     info "Building kptools"
     command -v cc >/dev/null || die "No host C compiler for kptools"
+    # Fresh checkouts do not contain tools/preset.h; hdr copies the matching
+    # payload ABI headers before the host compiler needs them.
+    ( cd "$KP_DIR/kernel" && TARGET_COMPILE="$CROSS" ANDROID=1 make hdr ) \
+        || die "Could not prepare matching KernelPatch headers"
     ( cd "$KP_DIR/tools" && ANDROID=1 make -j"$(nproc)" ) || die "kptools build failed"
     [ -x "$KPT_TOOLS" ] || die "kptools was not produced"
 fi
@@ -83,16 +90,34 @@ fi
 # the Makefile's +=, which is the only reason this override works.
 KP_CFLAGS="-Wall -fno-builtin -std=gnu11 -nostdinc -mgeneral-regs-only \
 -ffixed-x18 -fno-stack-protector -fno-stack-clash-protection \
--fno-asynchronous-unwind-tables -fno-pic -mcmodel=large"
+-fno-asynchronous-unwind-tables -fno-pic -mcmodel=small -DANDROID"
 
-if [ ! -f "$KPIMG" ]; then
+# This project supplies KPM while the phone's existing root owns module startup.
+# Keep KernelSU's init.rc path visible rather than redirecting it to KP's rc.
+PRESERVE_ROOT_INIT="${PRESERVE_ROOT_INIT:-1}"
+case "$PRESERVE_ROOT_INIT" in
+    1)
+        python3 "$REPO_ROOT/scripts/preserve-kp-init.py" "$KP_DIR"
+        KP_CFLAGS="$KP_CFLAGS -DDROIDSPACES_PRESERVE_ROOT_INIT"
+        ;;
+    0) ;;
+    *) die "PRESERVE_ROOT_INIT must be 0 or 1" ;;
+esac
+
+command -v "${CROSS}gcc" >/dev/null || die "${CROSS}gcc not found"
+KP_SOURCE_DIFF="$(git -C "$KP_DIR" diff -- kernel | sha256sum | cut -d ' ' -f1)"
+KP_CC_VERSION="$("${CROSS}gcc" -dumpfullversion -dumpversion)"
+KP_BUILD_SIGNATURE="$(git -C "$KP_DIR" rev-parse HEAD):$KP_SOURCE_DIFF:$CROSS:$KP_CC_VERSION:$KP_CFLAGS"
+KP_BUILD_STAMP="$KP_DIR/kernel/.droidspaces-build-flags"
+if [ ! -f "$KPIMG" ] || [ "$(cat "$KP_BUILD_STAMP" 2>/dev/null || true)" != "$KP_BUILD_SIGNATURE" ]; then
     info "Building kpimg with $CROSS"
     command -v "${CROSS}gcc" >/dev/null \
         || die "${CROSS}gcc not found. Install gcc-aarch64-linux-gnu, or set CROSS."
     ( cd "$KP_DIR/kernel" && \
       TARGET_COMPILE="$CROSS" ANDROID=1 \
-      make -j"$(nproc)" "CFLAGS=$KP_CFLAGS" ) || die "kpimg build failed"
+      make -B -j"${BUILD_JOBS:-$(nproc)}" kpimg "CFLAGS=$KP_CFLAGS" ) || die "kpimg build failed"
     [ -f "$KPIMG" ] || die "kpimg was not produced"
+    printf '%s\n' "$KP_BUILD_SIGNATURE" >"$KP_BUILD_STAMP"
 fi
 info "kpimg: $(du -h "$KPIMG" | cut -f1)"
 

@@ -1,0 +1,12 @@
+{
+  "image": "/workspaces/Droidspaces-Kernel-ForK80/dist/Image.kpm-smallmodel",
+  "memory": 6144,
+  "el": 1,
+  "kaslr": true,
+  "returncode": 0,
+  "init_reached": true,
+  "kpm_pass": true,
+  "container_pass": true,
+  "original_init_pass": false,
+  "log": "/workspaces/Droidspaces-Kernel-ForK80/.cache/qemu-kpm/Image.kpm-smallmodel-9fe4f75a96f0-6144-el1-kaslr1.log"
+}

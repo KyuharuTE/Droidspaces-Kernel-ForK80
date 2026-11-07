@@ -103,21 +103,38 @@ kpms/nbdemo/                           example KPM
 manager/                               Android app that loads and manages KPMs
 ```
 
-## Loading .kpm modules: attempted, and does not boot
+## Loading .kpm modules: corrected kernel verified on device
 
-Read [HANDOVER.md](HANDOVER.md) for the full record. Short version:
+The latest investigation reproduced the old payload's crash in QEMU and traced
+it to the build scripts' `-mcmodel=large`: after relocation the payload accessed
+link-time absolute addresses. The scripts now use the small code model, preserve
+the Android preprocessor define, and rebuild cached payloads when the build
+signature changes. The corrected candidate boots in QEMU and passes real KPM
+load/control/unload tests, including 6 GiB RAM, EL1 and KASLR.
+
+The corrected kernel has now booted on the zorn phone and passed real KPM
+hello/version/load/list/info/control/unload tests. Namespace creation also
+passed. Only `boot_a` was flashed. See `reports/device-verification.md` for
+the exact tested images, the known-working rollback backup and limitations.
+Manager 1.0.1 fixes the separate extraction/static-TLS client issues and has
+also connected successfully on the device. See `reports/manager-zygisk-repair.md`.
+
+Read [the startup fix report](reports/zygisk-startup-fix.md) for the verified
+KernelSU/Zygisk coexistence fix. Short version:
 
 A `.kpm` is not a kernel module and not a config option. It is an arm64 ELF
 relocatable object mapped into kernel space by a runtime, and that runtime is
 KernelPatch, which either patches the built Image (`kptools` + `kpimg`) or is
-compiled into the kernel. Both were tried on this device. **Both failed to reach
-the boot animation**, while the same kernel without KernelPatch boots.
+compiled into the kernel. Earlier attempts with the in-tree experiment and
+the incorrectly compiled payload failed to reach the boot animation. The
+corrected small-model payload now boots and loads KPMs on the device.
 
-Because `kpimg` takes over at `primary_entry`, before any console or logging
-backend exists, no log of the failure is obtainable without a UART.
+Although device logs were unavailable, the same Image could be booted in QEMU
+with an early serial console, which exposed the old payload's startup fault.
 
-So: **the Droidspaces support works. KPM loading does not.** If you want
-containers, use the `base` release asset and ignore this section.
+The old published KPM assets remain historical builds. The corrected local
+`dist/AnyKernel3_zorn_droidspaces_kpm-smallmodel.zip` contains the verified
+Image; it has not been published as a new release.
 
 `scripts/kpm-integrated-build.sh`, `scripts/kpm-patch-image.sh`,
 `scripts/build-kpm.sh`, `scripts/vendor-kpatch.py` and `manager/` are kept
@@ -156,6 +173,24 @@ The outputs are:
 - `dist/AnyKernel3_zorn_droidspaces.zip` — flashable package
 - `.cache/droidspaces/out/arch/arm64/boot/Image` — raw kernel (default `OUT_DIR`)
 - `.cache/droidspaces/out/.config` — resolved configuration
+
+Both KPM scripts use the same `.cache/droidspaces/out` default. For builds
+elsewhere, pass `OUT_DIR` explicitly (and `IMAGE` for a different input Image).
+The build, patch and artifact checks reject disabled CFI/SCS, enabled module
+signing, and the experimental in-tree KP driver. This preserves the boot-tested
+configuration; it does not establish KernelPatch boot compatibility.
+
+Record existing artifacts without rebuilding or modifying them:
+
+```bash
+python3 scripts/audit-artifacts.py "$PWD" > baseline-inventory.json
+python3 scripts/test-kernel-config.py
+```
+
+The inventory includes hashes, entry branches, header memory sizes, source
+commits and package comparisons. Header `image_size` is a memory footprint,
+not the Image file length. See `reports/2026-11-07_kernelpatch-boot-report.md`
+for the latest baseline and unpatch investigation.
 
 The `kernel/`, `.cache/droidspaces/` and `dist/` paths are ignored by Git. Review source changes in
 `kernel/` separately; they are not part of this configuration repository.

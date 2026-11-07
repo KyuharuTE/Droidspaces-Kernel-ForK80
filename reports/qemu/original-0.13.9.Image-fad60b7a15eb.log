@@ -1,0 +1,47 @@
+[    0.000000][    T0] Booting Linux on physical CPU 0x0000000000 [0x000f0510]
+[    0.000000][    T0] Linux version 6.1.176-android14-11-g0b76321acf29-dirty-ab14529422-nbkernel (codespace@codespaces-88d239) (Android (10087095, +pgo, +bolt, +lto, -mlgo, based on r487747c) clang version 17.0.2 (https://android.googlesource.com/toolchain/llvm-project d9f89f4d16663d5012e5c09495f3b30ece3d2362), LLD 17.0.2) #2 SMP PREEMPT Sat Nov  7 13:12:32 UTC 2026
+[    0.000000][    T0] random: crng init done
+[    0.000000][    T0] Machine model: linux,dummy-virt
+[    0.000000][    T0] Stack Depot is disabled
+[    0.000000][    T0] earlycon: pl11 at MMIO 0x0000000009000000 (options '')
+[    0.000000][    T0] printk: bootconsole [pl11] enabled
+[    0.000000][    T0] efi: UEFI not found.
+[    0.000000][    T0] Unable to handle kernel read from unreadable memory at virtual address 0000000000050068
+[    0.000000][    T0] Mem abort info:
+[    0.000000][    T0]   ESR = 0x0000000096000005
+[    0.000000][    T0]   EC = 0x25: DABT (current EL), IL = 32 bits
+[    0.000000][    T0]   SET = 0, FnV = 0
+[    0.000000][    T0]   EA = 0, S1PTW = 0
+[    0.000000][    T0]   FSC = 0x05: level 1 translation fault
+[    0.000000][    T0] Data abort info:
+[    0.000000][    T0]   ISV = 0, ISS = 0x00000005
+[    0.000000][    T0]   CM = 0, WnR = 0
+[    0.000000][    T0] [0000000000050068] user address but active_mm is swapper
+[    0.000000][    T0] Internal error: Oops: 0000000096000005 [#1] PREEMPT SMP
+[    0.000000][    T0] Modules linked in:
+[    0.000000][    T0] CPU: 0 PID: 0 Comm: swapper Not tainted 6.1.176-android14-11-g0b76321acf29-dirty-ab14529422-nbkernel #2
+[    0.000000][    T0] Hardware name: linux,dummy-virt (DT)
+[    0.000000][    T0] pstate: 604000c5 (nZCv daIF +PAN -UAO -TCO -DIT -SSBS BTYPE=--)
+[    0.000000][    T0] pc : 0xffffffc06769f034
+[    0.000000][    T0] lr : tcp_splice_read+0xb4/0x2b8
+[    0.000000][    T0] sp : ffffffc00a043b60
+[    0.000000][    T0] x29: ffffffc00a043b60 x28: ffffff80024f0000 x27: ffffffc06769f000
+[    0.000000][    T0] x26: 0000000000761000 x25: ffd7ffffffffff7f x24: 0000000000000000
+[    0.000000][    T0] x23: 00000000000558c0 x22: 00000000424f0000 x21: 000000009f89f000
+[    0.000000][    T0] x20: 0000000000050000 x19: 0000000000051330 x18: ffffffc00a05ee40
+[    0.000000][    T0] x17: 0000000000000000 x16: 000000009f520000 x15: 000000009f520000
+[    0.000000][    T0] x14: 0000000000001000 x13: 0000000000000005 x12: 00000000a0000000
+[    0.000000][    T0] x11: 0000000000ae1000 x10: 0000000000000005 x9 : 0000000000000000
+[    0.000000][    T0] x8 : 0000565354415254 x7 : ffffffc06769f000 x6 : 00000000fffffff7
+[    0.000000][    T0] x5 : 0040000000000703 x4 : 0000000000051490 x3 : ffffffc06769f000
+[    0.000000][    T0] x2 : ffffffc06769f000 x1 : ffffff7fc0000000 x0 : ffffffbfc7e00000
+[    0.000000][    T0] Call trace:
+[    0.000000][    T0]  0xffffffc06769f034
+[    0.000000][    T0]  tcp_splice_read+0xb4/0x2b8
+[    0.000000][    T0]  setup_arch+0x150/0x22c
+[    0.000000][    T0]  start_kernel+0x80/0x480
+[    0.000000][    T0]  __primary_switched+0xc8/0xd4
+[    0.000000][    T0] Code: f9455453 f2aa8828 f9455064 f2caca68 (f9403686) 
+[    0.000000][    T0] ---[ end trace 0000000000000000 ]---
+[    0.000000][    T0] Kernel panic - not syncing: Oops: Fatal exception
+[    0.000000][    T0] Reboot failed -- System halted

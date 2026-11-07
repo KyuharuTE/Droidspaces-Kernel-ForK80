@@ -1,0 +1,23 @@
+version_local:1.5.2-864-a4a72ce-release
+abi:arm64-v8a (primary), armeabi-v7a
+uname:6.1.176-android14-11-g0b76321acf29-dirty-ab14529422-nbkernel aarch64
+android_sdk:37
+version:1.5.2-864-a4a72ce-release
+zygote_states:1
+zygote_state_0:1,0,1761,zygote,3,0
+inject_state:1
+root_status:✅KernelSU (32704)
+denylist_policy:0
+enforce_denylist:2
+memory_type:1
+linker:1
+hook_mode:255
+root_impl:3
+root_ver:32704
+modules64:3,zygisk_lsposed,playintegrityfix,funbox
+modules32:2,zygisk_lsposed,playintegrityfix
+modules_with_issue:0
+1
+Enforcing
+5750 /data/adb/zygisksu/znctx
+5750 /data/adb/zygisksu/modules_info

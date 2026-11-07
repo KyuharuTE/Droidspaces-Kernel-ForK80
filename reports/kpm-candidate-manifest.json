@@ -1,0 +1,46 @@
+{
+  "status": "Real-device Android boot, KPM load/list/info/control/unload and namespace probes passed; only boot_a flashed",
+  "kernelpatch_commit": "d4c88d6672687456b299e4b5153c24dc979d789b",
+  "baseline_image_sha256": "e8485e67a83e63179a8d8a73464889334cbe2c7fbe4d464c1307560e20a63672",
+  "artifacts": {
+    "dist/Image.kpm-smallmodel": {
+      "bytes": 36214976,
+      "sha256": "9fe4f75a96f0a17fde046ac1c45f3d718bcf4d24ba805c67a1760a90c16605ec"
+    },
+    "dist/AnyKernel3_zorn_droidspaces_kpm-smallmodel.zip": {
+      "bytes": 18152397,
+      "sha256": "13444152dee432665a86325988924d7de4131db5ecaf6e51a43f19015f3e61b5"
+    },
+    "artifacts/device-backup/boot_a-kpm-smallmodel.img": {
+      "bytes": 100663296,
+      "sha256": "98a3636a69015c688b74ddd92fe40d5fd0abeabdf2d69416f39525f71ef5736a"
+    },
+    "artifacts/device-backup/boot_a-before-kpm.img": {
+      "bytes": 100663296,
+      "sha256": "1089ccf7b583c86c9ecc92746fc076da4d52cba57e564aa204060e7d16dd0ce1"
+    }
+  },
+  "device_validation": {
+    "recorded_at": "2026-11-07T23:05:26.291703+08:00",
+    "report": "reports/device-kpm-verification.json",
+    "boot_report": "reports/device-boot-result.json",
+    "manager_app_tested": true,
+    "manager_client_issue": "Fixed in Manager 1.0.1; extraction, TLS alignment and stdin authentication verified on device"
+  },
+  "manager": {
+    "version": "1.0.1",
+    "apk": "dist/KPM-Manager-1.0.1-debug.apk",
+    "sha256": "d85465be54aa66f9e52278f1e86637bea422999b8571c0adb806fffcf39776a1",
+    "report": "reports/manager-zygisk-repair.md"
+  },
+  "latest_verified": {
+    "report": "reports/zygisk-startup-fix.md",
+    "image_sha256": "22ebf431b3786752327e7a09b0fe13a33ddc24efce8bda3082452a6f886030e0",
+    "boot_a_sha256": "3f5bd956efea95d6af86875e4e1d212610aa051324785d03aed6cfb03fe30279",
+    "kernel_su_boot_stages_passed": true,
+    "zygisk_autostart_passed": true,
+    "kpm_passed": true,
+    "manager_connected": true,
+    "note": "Release preserves original superkey as explicitly requested; artifact hashes unchanged."
+  }
+}

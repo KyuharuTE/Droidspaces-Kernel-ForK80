@@ -108,6 +108,8 @@ check() {
     [ -s "$IMAGE" ] || die "Missing kernel Image: $IMAGE"
     [ -s "$OUT_ZIP" ] || die "Missing AnyKernel3 zip: $OUT_ZIP"
     [ -s "$OUT_DIR/.config" ] || die "Missing resolved kernel config"
+    python3 "$REPO_ROOT/scripts/check-kernel-config.py" "$OUT_DIR/.config" \
+        || die "Configuration differs from the boot-tested baseline"
     for symbol in CONFIG_SYSVIPC CONFIG_IPC_NS CONFIG_PID_NS CONFIG_UTS_NS \
                   CONFIG_NAMESPACES CONFIG_DEVTMPFS CONFIG_CGROUPS; do
         grep -qx "$symbol=y" "$OUT_DIR/.config" || die "$symbol is not enabled"

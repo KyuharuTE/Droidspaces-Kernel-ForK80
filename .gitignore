@@ -32,3 +32,11 @@ manager/local.properties
 .cache/
 *.cxx/
 .cxx/
+
+# Local device partition backups must never be committed or published.
+/artifacts/device-backup/
+/artifacts/bugreports/
+
+# Downloaded tool/source caches and private agent case files.
+/.kp/
+/work/

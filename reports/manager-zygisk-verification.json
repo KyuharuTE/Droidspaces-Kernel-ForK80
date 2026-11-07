@@ -1,0 +1,7 @@
+{
+  "manager_connected": true,
+  "manager_status": "KernelPatch connected · 0 module(s)",
+  "zygisk_status": "version_local:1.5.2-864-a4a72ce-release\nabi:arm64-v8a (primary), armeabi-v7a (tango)\nuname:6.1.176-android14-11-g0b76321acf29-dirty-ab14529422-nbkernel aarch64\nandroid_sdk:37\nversion:1.5.2-864-a4a72ce-release\nzygote_states:1\nzygote_state_0:1,0,31248,zygote,3,0\ninject_state:1\nroot_status:✅KernelSU (32704)\ndenylist_policy:0\nenforce_denylist:2\nmemory_type:1\nlinker:1\nhook_mode:255\nroot_impl:3\nroot_ver:32704\nmodules64:3,zygisk_lsposed,playintegrityfix,funbox\nmodules32:2,zygisk_lsposed,playintegrityfix\nmodules_with_issue:0\n1\nEnforcing\n",
+  "kernel_rebooted": false,
+  "partitions_written_this_repair": []
+}

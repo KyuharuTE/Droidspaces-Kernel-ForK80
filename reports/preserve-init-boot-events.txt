@@ -1,0 +1,96 @@
+[   74.932937] init: starting service 'exec 12 (/data/adb/ksud post-fs-data)'...
+[   74.933821] init: ... started service 'exec 12 (/data/adb/ksud post-fs-data)' has pid 1514
+[   74.933829] init: SVC_EXEC service 'exec 12 (/data/adb/ksud post-fs-data)' pid 1514 (uid 0 gid 0+0 context u:r:ksu:s0) started; waiting...
+[   75.263675] [I][1527:1527][zn-daemon64]:Zygisk Next Daemon 1.5.2-864-a4a72ce-release
+[   75.263714] [I][1527:1527][zn-daemon64]:Kernel: 6.1.176-android14-11-g0b76321acf29-dirty-ab14529422-nbkernel aarch64
+[   75.288545] [I][1527:1527][zn-daemon64]:** write prop
+[   75.310650] [I][1527:1527][zn-daemon64]:** preparing payload ...
+[   75.310684] [I][1527:1527][zn-daemon64]:** payload prepared
+[   75.310695] [I][1527:1527][zn-daemon64]:** attaching init ...
+[   75.310762] [I][1527:1527][zn-daemon64]:** init attached
+[   75.310774] [I][1527:1527][zn-daemon64]:** loading payload ...
+[   75.311502] [I][1527:1527][zn-daemon64]:libpayload base: 7f85452000
+[   75.311523] [I][1527:1527][zn-daemon64]:** payload loaded
+[   75.311533] [I][1527:1527][zn-daemon64]:** setting up payload ...
+[   75.311553] [I][1527:1527][zn-daemon64]:** payload has been setup
+[   75.311563] [I][1527:1527][zn-daemon64]:** inline hook prepare ...
+[   75.312540] [I][1527:1527][zn-daemon64]:** hooking execve
+[   75.312551] [I][1527:1527][zn-daemon64]:*** prepare trampoline
+[   75.313726] [I][1527:1527][zn-daemon64]:** inline hook commit
+[   75.313765] [I][1527:1527][zn-daemon64]:execve hook installed
+[   75.313778] [I][1527:1527][zn-daemon64]:** hooking wait4
+[   75.313788] [I][1527:1527][zn-daemon64]:*** prepare trampoline
+[   75.314751] [I][1527:1527][zn-daemon64]:** inline hook commit
+[   75.314780] [I][1527:1527][zn-daemon64]:wait4 hook installed
+[   75.314798] [I][1527:1527][zn-daemon64]:inject success!
+[   75.314808] [I][1527:1527][zn-daemon64]:** do cleanup
+[   75.314950] [I][1527:1527][zn-daemon64]:** do restore
+[   75.315877] [I][1527:1527][zn-daemon64]:loading 64bit zygisk modules
+[   75.316887] [I][1527:1527][zn-daemon64]:loaded 64bit zygisk module zygisk_lsposed
+[   75.317893] [I][1527:1527][zn-daemon64]:loaded 64bit zygisk module playintegrityfix
+[   75.318882] [I][1527:1527][zn-daemon64]:loaded 64bit zygisk module funbox
+[   75.318945] [I][1527:1527][zn-daemon64]:loaded 3 64bit zygisk module(s)
+[   75.318979] [I][1527:1527][zn-daemon64]:loading 32bit zygisk modules
+[   75.319780] [I][1527:1527][zn-daemon64]:loaded 32bit zygisk module zygisk_lsposed
+[   75.320550] [I][1527:1527][zn-daemon64]:loaded 32bit zygisk module playintegrityfix
+[   75.320605] [I][1527:1527][zn-daemon64]:loaded 2 32bit zygisk module(s)
+[   75.320805] [I][1527:1527][zn-daemon64]:loading zn modules
+[   75.321016] [I][1527:1527][zn-daemon64]:add module zygisk_lsposed lib /data/adb/modules/zygisk_lsposed/zygisk/arm64-v8a.so scope filter path=/system_ext/bin/hyos_spawner
+[   75.321041] [I][1527:1527][zn-daemon64]:add module zygisk_lsposed lib /data/adb/modules/zygisk_lsposed/zygisk/arm64-v8a.so scope filter name=artd
+[   75.321131] [I][1527:1527][zn-daemon64]:loaded 1 zn modules
+[   75.321493] [I][1532:1532][zn-daemon64]:** daemon launched
+[   75.321721] [I][1532:1532][zn-daemon64]:** denylist policy: 0
+[   75.322036] [I][1532:1532][zn-daemon64]:** denylist enforce mode: 2
+[   75.322186] [I][1532:1532][zn-daemon64]:** memory type: 1
+[   75.322330] [I][1532:1532][zn-daemon64]:** linker mode: 1
+[   75.322420] [I][1532:1532][zn-daemon64]:** write prop
+[   76.231283] init: Service 'exec 12 (/data/adb/ksud post-fs-data)' (pid 1514) exited with status 0 waiting took 1.297000 seconds
+[   76.231292] init: Sending SIGKILL to service 'exec 12 (/data/adb/ksud post-fs-data)' (pid 1514) process group...
+[   76.639131] [I][1532:1742][zn-daemon64]:** new zygote process: 1761 /system/bin/app_process64 name=zygote
+[   76.639688] [I][1762:1762][zn-daemon64]:** run zygote-injector for 1761: 1762 ./bin/zygiskd64
+[   76.881476] [I][1532:1533][zn-daemon64]:[zn-zygisk-loader64,0,1761,1761]Zygisk library injected, version 1.5.2-864-a4a72ce-release,exp_hook
+[   76.881508] [I][1532:1533][zn-daemon64]:[zn-zygisk-loader64,0,1761,1761]Start hooking
+[   77.021230] [I][1532:1669][zn-daemon64]:zygote 1761 hook status: 3
+[   77.023500] [I][1532:1742][zn-daemon64]:** inject success for 1761
+[   77.023556] [I][1532:1742][zn-daemon64]:** write prop
+[   78.883805] [I][1532:1533][zn-daemon64]:[zn-zygisk-loader64,0,2586,2586]Unmounted (/system/etc/security/cacerts/243f0bfb.0)
+[   78.883842] [I][1532:1533][zn-daemon64]:[zn-zygisk-loader64,0,2586,2586]Unmounted (/system/bin/python3)
+[   78.883855] [I][1532:1533][zn-daemon64]:[zn-zygisk-loader64,0,2586,2586]Unmounted (/system/bin/python)
+[   78.884085] [I][1532:1533][zn-daemon64]:[zn-zygisk-loader64,0,2586,2586]Unmounted (/system/bin/pip3)
+[   78.884268] [I][1532:1533][zn-daemon64]:[zn-zygisk-loader64,0,2586,2586]Unmounted (/system/bin/pip)
+[   78.884480] [I][1532:1533][zn-daemon64]:[zn-zygisk-loader64,0,2586,2586]Unmounted (/system/bin/imgbox)
+[   78.884530] [I][1532:1533][zn-daemon64]:[zn-zygisk-loader64,0,2586,2586]Unmounted (/system/bin/fastboot)
+[   78.884653] [I][1532:1533][zn-daemon64]:[zn-zygisk-loader64,0,2586,2586]Unmounted (/system/bin/claude)
+[   78.884708] [I][1532:1533][zn-daemon64]:[zn-zygisk-loader64,0,2586,2586]Unmounted (/system/bin/adb)
+[   78.885018] [I][1532:1533][zn-daemon64]:[zn-zygisk-loader64,0,2586,2586]Unmounted (/system/etc/security/cacerts)
+[   78.885276] [I][1532:1533][zn-daemon64]:[zn-zygisk-loader64,0,2586,2586]Unmounted (/system/bin)
+[   78.885825] [I][1532:1533][zn-daemon64]:[zn-zygisk-loader64,0,1761,1761]mntbuf cleaned
+[   78.888541] [I][1532:1742][zn-daemon64]:nscleaner for zygote started
+[   78.979662] [I][1532:1533][zn-daemon64]:[zn-zygisk-loader64,0,1761,1761]preload zygisk modules
+[   78.984892] [I][1532:1533][zn-daemon64]:[zn-zygisk-loader64,0,1761,1761]loaded zygisk_lsposed at 0x32b843d000
+[   78.985364] [I][1532:1533][zn-daemon64]:[zn-zygisk-loader64,0,1761,1761]loaded playintegrityfix at 0x32b8426000
+[   79.280106] [I][1532:1533][zn-daemon64]:[zn-zygisk-loader64,0,1761,1761]loaded funbox at 0x32b83bb000
+[   79.280165] [I][1532:1533][zn-daemon64]:[zn-zygisk-loader64,0,1761,1761]preloaded 3/3 modules
+[   79.280304] [I][1532:1533][zn-daemon64]:[zn-zygisk-loader64,0,1761,1761]remap self anon
+[   79.392011] [I][1532:1533][zn-daemon64]:[zn-zygisk-loader64,0,1761,1761]remap self anon done
+[   79.434232] [I][1532:1533][zn-daemon64]:[zn-zygisk-loader64,0,2605,2605]cfi shadow addr 0x75f7391000
+[   80.770174] init: starting service 'exec 25 (/data/adb/ksud services)'...
+[   80.773345] init: ... started service 'exec 25 (/data/adb/ksud services)' has pid 3171
+[   80.773373] init: SVC_EXEC service 'exec 25 (/data/adb/ksud services)' pid 3171 (uid 0 gid 0+0 context u:r:ksu:s0) started; waiting...
+[   80.945331] init: Service 'exec 25 (/data/adb/ksud services)' (pid 3171) exited with status 0 waiting took 0.173000 seconds
+[   80.945350] init: Sending SIGKILL to service 'exec 25 (/data/adb/ksud services)' (pid 3171) process group...
+[   84.728155] [I][1532:1742][zn-daemon64]:loading module into 4252 /system_ext/bin/hyos_spawner
+[   84.729275] [I][4254:4254][zn-daemon64]:** run service-injector for 4252: 4254 ./bin/zygiskd64
+[   84.746992] [I][1532:1669][zn-daemon64]:** spawn zn companion zygisk_lsposed:arm64-v8a.so
+[   84.754805] [I][1532:1533][zn-daemon64]:[zn-module-loader64,0,4252,4252]HyperOS Rust Runtime hooks installed for 1 module(s)
+[   84.754872] [I][1532:1742][zn-daemon64]:** write prop
+[   86.486536] [I][1532:1742][zn-daemon64]:loading module into 4378 /apex/com.android.art/bin/artd
+[   86.487883] [I][4380:4380][zn-daemon64]:** run service-injector for 4378: 4380 ./bin/zygiskd64
+[   86.514964] [I][1532:1742][zn-daemon64]:** write prop
+[   92.587243] [I][1532:1669][zn-daemon64]:injected process died: pid=4378 status=0x0 exited with 0 dc=0
+[   92.587287] [I][1532:1669][zn-daemon64]:** write prop
+[   97.413893] init: starting service 'exec 29 (/data/adb/ksud boot-completed)'...
+[   97.416732] init: ... started service 'exec 29 (/data/adb/ksud boot-completed)' has pid 7532
+[   97.416758] init: SVC_EXEC service 'exec 29 (/data/adb/ksud boot-completed)' pid 7532 (uid 0 gid 0+0 context u:r:ksu:s0) started; waiting...
+[   97.533352] init: Service 'exec 29 (/data/adb/ksud boot-completed)' (pid 7532) exited with status 0 waiting took 0.117000 seconds
+[   97.533366] init: Sending SIGKILL to service 'exec 29 (/data/adb/ksud boot-completed)' (pid 7532) process group...

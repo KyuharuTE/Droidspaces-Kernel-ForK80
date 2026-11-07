@@ -1,0 +1,85 @@
+{
+  "passed": true,
+  "checks": {
+    "boot_completed": {
+      "exit_code": 0,
+      "output": "1"
+    },
+    "identity": {
+      "exit_code": 0,
+      "output": "zorn\n6.1.176-android14-11-g0b76321acf29-dirty-ab14529422-nbkernel\nRedmi/zorn/zorn:17/CP2A.260605.016/OS4.0.0.13.XOKCNXM:user/release-keys\nuid=0(root) gid=0(root) groups=0(root),1004(input),1007(log),1011(adb),1015(sdcard_rw),1028(sdcard_r),1078(ext_data_rw),1079(ext_obb_rw),3001(net_bt_admin),3002(net_bt),3003(inet),3006(net_bw_stats),3009(readproc),3011(uhid),3012(readtracefs) context=u:r:ksu:s0"
+    },
+    "boot_a_hash": {
+      "exit_code": 0,
+      "output": "3f5bd956efea95d6af86875e4e1d212610aa051324785d03aed6cfb03fe30279  /dev/block/by-name/boot_a"
+    },
+    "tmpfs": {
+      "exit_code": 0,
+      "output": "tmpfs /dev tmpfs rw,seclabel,nosuid,relatime,size=5657896k,nr_inodes=1414474,mode=755 0 0"
+    },
+    "prepare": {
+      "exit_code": 0,
+      "output": ""
+    },
+    "transfer_permissions": {
+      "exit_code": 0,
+      "output": ""
+    },
+    "permissions": {
+      "exit_code": 0,
+      "output": ""
+    },
+    "hello": {
+      "exit_code": 0,
+      "output": "OK hello kp=3337"
+    },
+    "versions": {
+      "exit_code": 0,
+      "output": "OK kp_version 0.13.9\nOK kernel_version 6.1.176"
+    },
+    "nums_before": {
+      "exit_code": 0,
+      "output": "OK nums 0"
+    },
+    "list_before": {
+      "exit_code": 0,
+      "output": "OK list"
+    },
+    "load": {
+      "exit_code": 0,
+      "output": "OK load"
+    },
+    "list_loaded": {
+      "exit_code": 0,
+      "output": "OK list\nkpm-nbdemo"
+    },
+    "info": {
+      "exit_code": 0,
+      "output": "OK info\nname=kpm-nbdemo\nversion=1.0.0\nlicense=GPL v2\nauthor=Droidspaces\ndescription=Minimal KPM example: logs on load, echoes control strings\nargs=device-smoke\nload_event=load-file\nload_source=file"
+    },
+    "nums_loaded": {
+      "exit_code": 0,
+      "output": "OK nums 1"
+    },
+    "control": {
+      "exit_code": 0,
+      "output": "OK control\necho: device-smoke"
+    },
+    "unload": {
+      "exit_code": 0,
+      "output": "OK unload"
+    },
+    "nums_after": {
+      "exit_code": 0,
+      "output": "OK nums 0"
+    },
+    "namespaces": {
+      "exit_code": 0,
+      "output": "PASS MNT UTS IPC PID NET namespaces"
+    },
+    "filesystems": {
+      "exit_code": 0,
+      "output": "nodev\tsysfs\nnodev\ttmpfs\nnodev\tbdev\nnodev\tproc\nnodev\tcgroup\nnodev\tcgroup2\nnodev\tcpuset\nnodev\tdevtmpfs\nnodev\tbinfmt_misc\nnodev\tconfigfs\nnodev\tdebugfs\nnodev\ttracefs\nnodev\tsecurityfs\nnodev\tsockfs\nnodev\tbpf\nnodev\tpipefs\nnodev\tramfs\nnodev\tdevpts\n\text3\n\text2\n\text4\n\tvfat\n\tmsdos\n\texfat\n\tfuseblk\nnodev\tfuse\nnodev\tfusectl\nnodev\tvirtiofs\nnodev\toverlay\nnodev\tincremental-fs\n\tf2fs\n\terofs\nnodev\tmqueue\nnodev\tselinuxfs\nnodev\tbinder\nnodev\tpstore\nnodev\tfunctionfs"
+    }
+  }
+}

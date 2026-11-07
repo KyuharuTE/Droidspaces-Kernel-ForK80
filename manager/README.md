@@ -1,5 +1,11 @@
 # KPM Manager
 
+Version 1.0.1 has been verified on the zorn Android 17 device. It fixes client
+extraction when native entries remain inside the APK, ARM64 static-TLS
+alignment, and startup error handling. Keys reach the client through stdin.
+The UI connects successfully to the verified KernelPatch 0.13.9 kernel.
+See `../reports/manager-zygisk-repair.md` for evidence and the APK hash.
+
 An Android app that loads and manages **KernelPatch Modules (`.kpm`)** on the
 kernel built by this repository.
 

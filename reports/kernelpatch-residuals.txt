@@ -1,0 +1,243 @@
+[
+  {
+    "offset": "0xe8fbf8",
+    "symbol": "tcp_init_sock",
+    "symbol_offset": "0x0",
+    "base_word": "3f2303d5",
+    "restored_word": "1f2003d5"
+  },
+  {
+    "offset": "0xe8fd24",
+    "symbol": "tcp_init_sock",
+    "symbol_offset": "0x12c",
+    "base_word": "bf2303d5",
+    "restored_word": "1f2003d5"
+  },
+  {
+    "offset": "0xe8fd4c",
+    "symbol": "tcp_poll",
+    "symbol_offset": "0x0",
+    "base_word": "3f2303d5",
+    "restored_word": "1f2003d5"
+  },
+  {
+    "offset": "0xe8fff8",
+    "symbol": "tcp_poll",
+    "symbol_offset": "0x2ac",
+    "base_word": "bf2303d5",
+    "restored_word": "1f2003d5"
+  },
+  {
+    "offset": "0xe90094",
+    "symbol": "tcp_ioctl",
+    "symbol_offset": "0x0",
+    "base_word": "3f2303d5",
+    "restored_word": "1f2003d5"
+  },
+  {
+    "offset": "0xe902bc",
+    "symbol": "tcp_ioctl",
+    "symbol_offset": "0x228",
+    "base_word": "bf2303d5",
+    "restored_word": "1f2003d5"
+  },
+  {
+    "offset": "0xe90330",
+    "symbol": "tcp_skb_entail",
+    "symbol_offset": "0x0",
+    "base_word": "3f2303d5",
+    "restored_word": "1f2003d5"
+  },
+  {
+    "offset": "0xe9043c",
+    "symbol": "tcp_skb_entail",
+    "symbol_offset": "0x10c",
+    "base_word": "bf2303d5",
+    "restored_word": "1f2003d5"
+  },
+  {
+    "offset": "0xe90448",
+    "symbol": "tcp_push",
+    "symbol_offset": "0x0",
+    "base_word": "3f2303d5",
+    "restored_word": "1f2003d5"
+  },
+  {
+    "offset": "0xe90578",
+    "symbol": "tcp_push",
+    "symbol_offset": "0x130",
+    "base_word": "bf2303d5",
+    "restored_word": "1f2003d5"
+  },
+  {
+    "offset": "0xe905c8",
+    "symbol": "tcp_splice_read",
+    "symbol_offset": "0x0",
+    "base_word": "3f2303d5",
+    "restored_word": "1f2003d5"
+  },
+  {
+    "offset": "0xe907b0",
+    "symbol": "tcp_splice_read",
+    "symbol_offset": "0x1e8",
+    "base_word": "bf2303d5",
+    "restored_word": "1f2003d5"
+  },
+  {
+    "offset": "0xe90880",
+    "symbol": "tcp_stream_alloc_skb",
+    "symbol_offset": "0x0",
+    "base_word": "3f2303d5",
+    "restored_word": "1f2003d5"
+  },
+  {
+    "offset": "0xe90940",
+    "symbol": "tcp_stream_alloc_skb",
+    "symbol_offset": "0xc0",
+    "base_word": "bf2303d5",
+    "restored_word": "1f2003d5"
+  },
+  {
+    "offset": "0xe9098c",
+    "symbol": "sk_wmem_schedule",
+    "symbol_offset": "0x0",
+    "base_word": "3f2303d5",
+    "restored_word": "1f2003d5"
+  },
+  {
+    "offset": "0xe909d0",
+    "symbol": "sk_wmem_schedule",
+    "symbol_offset": "0x44",
+    "base_word": "bf2303d5",
+    "restored_word": "1f2003d5"
+  },
+  {
+    "offset": "0xe90a38",
+    "symbol": "tcp_send_mss",
+    "symbol_offset": "0x0",
+    "base_word": "3f2303d5",
+    "restored_word": "1f2003d5"
+  },
+  {
+    "offset": "0xe90acc",
+    "symbol": "tcp_send_mss",
+    "symbol_offset": "0x94",
+    "base_word": "bf2303d5",
+    "restored_word": "1f2003d5"
+  },
+  {
+    "offset": "0xe90af8",
+    "symbol": "tcp_remove_empty_skb",
+    "symbol_offset": "0x0",
+    "base_word": "3f2303d5",
+    "restored_word": "1f2003d5"
+  },
+  {
+    "offset": "0xe90c14",
+    "symbol": "tcp_remove_empty_skb",
+    "symbol_offset": "0x11c",
+    "base_word": "bf2303d5",
+    "restored_word": "1f2003d5"
+  }
+]
+
+PATCH AND RESTORE ANCHORS
+823:    int map_start, map_max_size;
+824:    select_map_area(&kallsym, kallsym_kimg, pimg.ori_kimg_len, &map_start, &map_max_size, is_gki);
+826:    setup->map_max_size = map_max_size;
+827:    tools_logi("map_start: 0x%x, max_size: 0x%x\n", map_start, map_max_size);
+829:    int sync_start = map_start;
+830:    int sync_size = map_max_size * 2;
+831:    if (sync_start + sync_size > ori_kimg_len) {
+832:        sync_size = ori_kimg_len - sync_start;
+834:    if (sync_size > 0) {
+835:        memcpy(out_kernel_file.kimg + sync_start, kallsym_kimg + sync_start, sync_size);
+837:                   sync_start, sync_size);
+867:        setup->map_max_size = i64swp(setup->map_max_size);
+1039:int unpatch_img(const char *kimg_path, const char *out_path)
+    kernel_file_t kernel_file;
+    read_kernel_file(kimg_path, &kernel_file);
+    if (kernel_file.is_uncompressed_img) tools_logw("kernel image with UNCOMPRESSED_IMG header\n");
+
+    char *out_kimg = NULL;
+    int out_kimg_len = 0;
+    int rc = patch_update_img_buf(kernel_file.kimg, kernel_file.kimg_len, kpimg_path, superkey, root_key,
+                                  additional, extra_configs, extra_config_num, &out_kimg, &out_kimg_len);
+
+    if (!rc) {
+        if (kernel_file.is_uncompressed_img) {
+            kernel_file_t out_file = { 0 };
+            new_kernel_file(&out_file, &kernel_file, out_kimg_len, false);
+            memcpy(out_file.kimg, out_kimg, out_kimg_len);
+            write_kernel_file(&out_file, out_path);
+            free_kernel_file(&out_file);
+        } else {
+            write_file(out_path, out_kimg, out_kimg_len, false);
+        }
+        tools_logi("patch done: %s\n", out_path);
+    }
+
+    if (out_kimg) free(out_kimg);
+    free_kernel_file(&kernel_file);
+
+    set_log_enable(false);
+    return rc;
+}
+
+int unpatch_img(const char *kimg_path, const char *out_path)
+{
+    if (!kimg_path) tools_loge_exit("empty kernel image\n");
+    if (!out_path) tools_loge_exit("empty out image path\n");
+
+    char *probe = NULL;
+    int probe_len = 0;
+    read_file(kimg_path, &probe, &probe_len);
+    bool x86_bzimage = is_x86_bzimage(probe, probe_len);
+    free(probe);
+    if (x86_bzimage) {
+        set_log_enable(true);
+        x86_bzimage_t image;
+        if (load_x86_bzimage(kimg_path, &image)) {
+            set_log_enable(false);
+            return -1;
+        }
+        int rc = remove_x86_kpimg(&image);
+        if (!rc) rc = write_x86_bzimage(&image, out_path);
+        free_x86_bzimage(&image);
+        set_log_enable(false);
+        return rc;
+    }
+
+    kernel_file_t kernel_file;
+    read_kernel_file(kimg_path, &kernel_file);
+
+    preset_t *preset = get_preset(kernel_file.kimg, kernel_file.kimg_len);
+    if (!preset) tools_loge_exit("not patched kernel image\n");
+
+    // todo: check whether the endian is different or not
+    memcpy(kernel_file.kimg, preset->setup.header_backup, sizeof(preset->setup.header_backup));
+    restore_header_image_size(kernel_file.kimg, kernel_file.kimg_len, preset);
+    int kimg_size = preset->setup.kimg_size ?: ((char *)preset - kernel_file.kimg);
+    update_kernel_file_img_len(&kernel_file, kimg_size, false);
+
+    write_kernel_file(&kernel_file, out_path);
+    free_kernel_file(&kernel_file);
+    return 0;
+}
+
+int reset_key(const char *kimg_path, const char *out_path, const char *superkey)
+{
+    if (!kimg_path) tools_loge_exit("empty kernel image\n");
+    if (!out_path) tools_loge_exit("empty out image path\n");
+    if (!superkey) tools_loge_exit("empty superkey\n");
+
+    if (strlen(superkey) <= 0) tools_loge_exit("empty superkey\n");
+    if (strlen(superkey) >= SUPER_KEY_LEN) tools_loge_exit("too long superkey\n");
+
+    kernel_file_t kernel_file;
+    read_kernel_file(kimg_path, &kernel_file);
+
+    preset_t *preset = get_preset(kernel_file.kimg, kernel_file.kimg_len);
+    if (!preset) tools_loge_exit("not patched kernel image\n");
+
+    memset(preset->setup.superkey, 0, sizeof(preset->setup.superkey));

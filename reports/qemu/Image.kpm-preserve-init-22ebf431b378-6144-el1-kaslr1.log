@@ -1,0 +1,485 @@
+[    0.000000][    T0] Booting Linux on physical CPU 0x0000000000 [0x000f0510]
+[    0.000000][    T0] Linux version 6.1.176-android14-11-g0b76321acf29-dirty-ab14529422-nbkernel (codespace@codespaces-88d239) (Android (10087095, +pgo, +bolt, +lto, -mlgo, based on r487747c) clang version 17.0.2 (https://android.googlesource.com/toolchain/llvm-project d9f89f4d16663d5012e5c09495f3b30ece3d2362), LLD 17.0.2) #2 SMP PREEMPT Sat Nov  7 13:12:32 UTC 2026
+[    0.000000][    T0] random: crng init done
+[    0.000000][    T0] Machine model: linux,dummy-virt
+[    0.000000][    T0] Stack Depot is disabled
+[    0.000000][    T0] KVM is not available. Ignoring kvm-arm.mode
+[    0.000000][    T0] earlycon: pl11 at MMIO 0x0000000009000000 (options '')
+[    0.000000][    T0] printk: bootconsole [pl11] enabled
+[    0.000000][    T0] efi: UEFI not found.
+[    0.000000][    T0] KP  _  __                    _ ____       _       _     
+[    0.000000][    T0] | |/ /___ _ __ _ __   ___| |  _ \ __ _| |_ ___| |__  
+[    0.000000][    T0] | ' // _ \ '__| '_ \ / _ \ | |_) / _` | __/ __| '_ \ 
+[    0.000000][    T0] | . \  __/ |  | | | |  __/ |  __/ (_| | || (__| | | |
+[    0.000000][    T0] |_|\_\___|_|  |_| |_|\___|_|_|   \__,_|\__\___|_| |_|
+[    0.000000][    T0] KP Kernel pa: 40200000
+[    0.000000][    T0] KP Kernel va: ffffffe216e00000
+[    0.000000][    T0] KP Kernel Version: 601b0
+[    0.000000][    T0] KP KernelPatch Version: d09
+[    0.000000][    T0] KP KernelPatch Config: 2
+[    0.000000][    T0] KP KernelPatch Compile Time: 15:43:08 Nov  7 2026
+[    0.000000][    T0] KP kallsyms_lookup_name offset: 1a794c (preset)
+[    0.000000][    T0] KP KernelPatch link base: d000, runtime base: ffffffe3964ac000
+[    0.000000][    T0] KP Kernel stext prot: d0000040210783
+[    0.000000][    T0] KP Region: ffffffe3964af000, ffffffe396c00000
+[    0.000000][    T0] KP KernelPatch start prot: 480001bf8af703
+[    0.000000][    T0] KP Text: ffffffe3964af000, ffffffe3964d6600
+[    0.000000][    T0] KP Data: ffffffe3964df000, ffffffe3964f4830
+[    0.000000][    T0] KP Extra: ffffffe3964ff000, ffffffe3964ff080
+[    0.000000][    T0] KP Hook: ffffffe396500000, ffffffe396600000
+[    0.000000][    T0] KP RW: ffffffe396600000, ffffffe396800000
+[    0.000000][    T0] KP ROX: ffffffe396800000, ffffffe396c00000
+[    0.000000][    T0] KP add vmalloc area: ffffffe3964af000, 751000
+[    0.000000][    T0] KP Restore: ffffffe217c8fbf0, ffffffe217c90bf0
+[    0.000000][    T0] KP ID_AA64AFR0_EL1: 0
+[    0.000000][    T0] KP ID_AA64AFR1_EL1: 0
+[    0.000000][    T0] KP ID_AA64DFR0_EL1: 1000000010305609
+[    0.000000][    T0] KP ID_AA64DFR1_EL1: 0
+[    0.000000][    T0] KP ID_AA64MMFR0_EL1: 100032310201126
+[    0.000000][    T0] KP ID_AA64MMFR1_EL1: 10011010312122
+[    0.000000][    T0] KP ID_AA64MMFR2_EL1: 1221011110011011
+[    0.000000][    T0] KP ID_AA64PFR0_EL1: 1201001121110022
+[    0.000000][    T0] KP ID_AA64PFR1_EL1: 1000121
+[    0.000000][    T0] KP MAIR_EL1: f4040044ffff
+[    0.000000][    T0] KP MIDR_EL1: f0510
+[    0.000000][    T0] KP MPIDR_EL1: 80000000
+[    0.000000][    T0] KP REVIDR_EL1: 0
+[    0.000000][    T0] KP SCTLR_EL1: 200000034f4d91d
+[    0.000000][    T0] KP TCR_EL1: 45000f5b5593519
+[    0.000000][    T0] KP TTBR0_EL1: 41e14000
+[    0.000000][    T0] KP TTBR1_EL1: 41e15000
+[    0.000000][    T0] KP Symbol: ffffffe3964f2640, ffffffe3964f4830
+[    0.000000][    T0] KP sys_call_table addr: ffffffe217e80cd8
+[    0.000000][    T0] KP compat_sys_call_table addr: ffffffe217e86c30
+[    0.000000][    T0] KP syscall config_compat: 1
+[    0.000000][    T0] KP syscall has_wrapper: 1
+[    0.000000][    T0] [+] KP D panic addr: ffffffe217e38020
+[    0.000000][    T0] [+] KP V Wrap func: ffffffe217e38020, origin: ffffffe217e38020, replace: ffffffe396500290, relocate: ffffffe396500068, chain: ffffffe396500010
+[    0.000000][    T0] [+] KP V Wrap chain add: ffffffe217e38020, ffffffe3964c0254, 0 successed
+[    0.000000][    T0] [+] KP V Wrap func: ffffffe217e38020 succsseed
+[    0.000000][    T0] KP hook panic rc: 0
+[    0.000000][    T0] KP event: paging-init
+[    0.000000][    T0] [+] KP V Wrap func: ffffffe217e4157c, origin: ffffffe217e4157c, replace: ffffffe3965007a0, relocate: ffffffe396500578, chain: ffffffe396500520
+[    0.000000][    T0] [+] KP V Wrap chain add: ffffffe217e4157c, ffffffe3964bff54, 0 successed
+[    0.000000][    T0] [+] KP V Wrap func: ffffffe217e4157c succsseed
+[    0.000000][    T0] KP hook rest_init rc: 0
+[    0.000000][    T0] [+] KP V Wrap func: ffffffe217e41660, origin: ffffffe217e41660, replace: ffffffe396500cb0, relocate: ffffffe396500a88, chain: ffffffe396500a30
+[    0.000000][    T0] [+] KP V Wrap chain add: ffffffe217e41660, ffffffe3964c00d0, ffffffe3964c0080 successed
+[    0.000000][    T0] [+] KP V Wrap func: ffffffe217e41660 succsseed
+[    0.000000][    T0] KP hook kernel_init rc: 0
+[    0.000000][    T0] Zone ranges:
+[    0.000000][    T0]   DMA32    [mem 0x0000000040000000-0x00000000ffffffff]
+[    0.000000][    T0]   Normal   [mem 0x0000000100000000-0x00000001bfffffff]
+[    0.000000][    T0]   Device   empty
+[    0.000000][    T0] Movable zone start for each node
+[    0.000000][    T0] Early memory node ranges
+[    0.000000][    T0]   node   0: [mem 0x0000000040000000-0x00000001bf8aefff]
+[    0.000000][    T0]   node   0: [mem 0x00000001bf8af000-0x00000001bfffffff]
+[    0.000000][    T0] Initmem setup node 0 [mem 0x0000000040000000-0x00000001bfffffff]
+[    0.000000][    T0] cma: Reserved 16 MiB at 0x00000000ff000000
+[    0.000000][    T0] psci: probing for conduit method from DT.
+[    0.000000][    T0] psci: PSCIv1.1 detected in firmware.
+[    0.000000][    T0] psci: Using standard PSCI v0.2 function IDs
+[    0.000000][    T0] psci: Trusted OS migration not required
+[    0.000000][    T0] psci: SMC Calling Convention v1.0
+[    0.000000][    T0] 'bootconfig' found on command line, but no bootconfig found
+[    0.000000][    T0] percpu: Embedded 30 pages/cpu s85736 r8192 d28952 u122880
+[    0.000000][    T0] Detected PIPT I-cache on CPU0
+[    0.000000][    T0] CPU features: SYS_ID_AA64MMFR1_EL1[11:8]: forced to 0
+[    0.000000][    T0] CPU features: detected: Address authentication (architected QARMA5 algorithm)
+[    0.000000][    T0] CPU features: detected: GIC system register CPU interface
+[    0.000000][    T0] CPU features: detected: Hardware dirty bit management
+[    0.000000][    T0] CPU features: detected: Spectre-v4
+[    0.000000][    T0] CPU features: detected: Spectre-BHB
+[    0.000000][    T0] alternatives: applying boot alternatives
+[    0.000000][    T0] Built 1 zonelists, mobility grouping on.  Total pages: 1548288
+[    0.000000][    T0] Kernel command line: console=ttynull stack_depot_disable=on cgroup_disable=pressure kasan.page_alloc.sample=10 kasan.stacktrace=off kvm-arm.mode=protected bootconfig ioremap_guard console=ttyAMA0 earlycon=pl011,0x9000000 rdinit=/init panic=-1
+[    0.000000][    T0] cgroup: Disabling pressure control group feature
+[    0.000000][    T0] Dentry cache hash table entries: 1048576 (order: 11, 8388608 bytes, linear)
+[    0.000000][    T0] Inode-cache hash table entries: 524288 (order: 10, 4194304 bytes, linear)
+[    0.000000][    T0] mem auto-init: stack:all(zero), heap alloc:on, heap free:off
+[    0.000000][    T0] software IO TLB: area num 2.
+[    0.000000][    T0] software IO TLB: mapped [mem 0x00000000fb000000-0x00000000ff000000] (64MB)
+[    0.000000][    T0] Memory: 6040432K/6291456K available (16832K kernel code, 2050K rwdata, 11804K rodata, 4224K init, 635K bss, 234640K reserved, 16384K cma-reserved)
+[    0.000000][    T0] SLUB: HWalign=64, Order=0-3, MinObjects=0, CPUs=2, Nodes=1
+[    0.000000][    T0] trace event string verifier disabled
+[    0.000000][    T0] rcu: Preemptible hierarchical RCU implementation.
+[    0.000000][    T0] rcu: 	RCU event tracing is enabled.
+[    0.000000][    T0] rcu: 	RCU restricting CPUs from NR_CPUS=32 to nr_cpu_ids=2.
+[    0.000000][    T0] rcu: 	RCU priority boosting: priority 1 delay 500 ms.
+[    0.000000][    T0] 	Trampoline variant of Tasks RCU enabled.
+[    0.000000][    T0] 	Tracing variant of Tasks RCU enabled.
+[    0.000000][    T0] rcu: RCU calculated value of scheduler-enlistment delay is 25 jiffies.
+[    0.000000][    T0] rcu: Adjusting geometry for rcu_fanout_leaf=16, nr_cpu_ids=2
+[    0.000000][    T0] NR_IRQS: 64, nr_irqs: 64, preallocated irqs: 0
+[    0.000000][    T0] GICv3: 256 SPIs implemented
+[    0.000000][    T0] GICv3: 0 Extended SPIs implemented
+[    0.000000][    T0] Root IRQ handler: gic_handle_irq
+[    0.000000][    T0] GICv3: GICv3 features: 16 PPIs
+[    0.000000][    T0] GICv3: CPU0: found redistributor 0 region 0:0x00000000080a0000
+[    0.000000][    T0] ITS [mem 0x08080000-0x0809ffff]
+[    0.000000][    T0] ITS@0x0000000008080000: allocated 8192 Devices @1000c0000 (indirect, esz 8, psz 64K, shr 1)
+[    0.000000][    T0] ITS@0x0000000008080000: allocated 8192 Interrupt Collections @1000d0000 (flat, esz 8, psz 64K, shr 1)
+[    0.000000][    T0] GICv3: using LPI property table @0x00000001000f0000
+[    0.000000][    T0] GICv3: CPU0: using allocated LPI pending table @0x0000000100100000
+[    0.000000][    T0] rcu: srcu_init: Setting srcu_struct sizes based on contention.
+[    0.000000][    T0] arch_timer: cp15 timer(s) running at 62.50MHz (virt).
+[    0.000000][    T0] clocksource: arch_sys_counter: mask: 0x1ffffffffffffff max_cycles: 0x1cd42e208c, max_idle_ns: 881590405314 ns
+[    0.000067][    T0] sched_clock: 57 bits at 63MHz, resolution 16ns, wraps every 4398046511096ns
+[    0.002788][    T0] kfence: initialized - using 524288 bytes for 63 objects at 0x(____ptrval____)-0x(____ptrval____)
+[    0.019193][    T0] Calibrating delay loop (skipped), value calculated using timer frequency.. 125.00 BogoMIPS (lpj=250000)
+[    0.025372][    T0] pid_max: default: 32768 minimum: 301
+[    0.030688][    T0] LSM: Security Framework initializing
+[    0.033700][    T0] SELinux:  Initializing.
+[    0.039201][    T0] Mount-cache hash table entries: 16384 (order: 5, 131072 bytes, linear)
+[    0.041043][    T0] Mountpoint-cache hash table entries: 16384 (order: 5, 131072 bytes, linear)
+[    0.068917][    T0] KP entering init ...
+[    0.071480][    T0] KP hotpatch backend: framework (alias_page: ffffffc008005000, alias_pte: e80001000ef703)
+[    0.073501][    T0] KP hotpatch_init done: 0
+[    0.075280][    T0] [+] KP V Wrap func: ffffffe216e2449c, origin: ffffffe216e2449c, replace: ffffffe3965011c0, relocate: ffffffe396500f98, chain: ffffffe396500f40
+[    0.078488][    T0] [+] KP V Wrap chain add: ffffffe216e2449c, ffffffe3964c17b0, 0 successed
+[    0.080659][    T0] [+] KP V Wrap func: ffffffe216e2449c succsseed
+[    0.081877][    T0] KP hook cfi_handler: ffffffe216e2449c, rc: 0
+[    0.083284][    T0] [+] KP V Hook func: ffffffe2170998b8, origin: ffffffe2170998b8, replace: ffffffe3964c18e4, relocate: ffffffe3965014a8, chain: ffffffe396501450
+[    0.086197][    T0] [+] KP V Hook func: ffffffe2170998b8 succsseed
+[    0.087803][    T0] KP bypass_kcfi done: 0
+[    0.088812][    T0] [+] KP V Wrap func: ffffffe216e2d128, origin: ffffffe216e2d128, replace: ffffffe396501be0, relocate: ffffffe3965019b8, chain: ffffffe396501960
+[    0.091478][    T0] [+] KP V Wrap chain add: ffffffe216e2d128, ffffffe3964c8f20, ffffffe3964c8df0 successed
+[    0.093483][    T0] [+] KP V Wrap func: ffffffe216e2d128 succsseed
+[    0.094681][    T0] KP syscall dispatcher: hooked invoke_syscall at ffffffe216e2d128 (skip_origin supported), global syscall hook enabled
+[    0.097097][    T0] KP current: 
+[    0.097782][    T0] KP     sp_el0: ffffffe218e60b00
+[    0.098722][    T0] KP     sp: ffffffe218e43cf0
+[    0.099686][    T0] KP     init_task addr lookup: ffffffe218e60b00
+[    0.100850][    T0] KP     init_thread_union addr lookup: ffffffe218e40000
+[    0.102345][    T0] KP     sp_el0: current
+[    0.103166][    T0] KP     init_task addr: ffffffe218e60b00
+[    0.104308][    T0] KP     init stack end: ffffffe218e40000
+[    0.105390][    T0] KP     thread_size: 4000
+[    0.106375][    T0] KP     stack_end_offset: 0
+[    0.107259][    T0] KP     thread_info_in_task: 1
+[    0.108338][    T0] KP     comm_offset of task: 848
+[    0.109321][    T0] KP     stack offset of task: 38
+[    0.110298][    T0] KP struct task_struct: 
+[    0.112180][    T0] KP     init_cred addr: ffffffe218e72fa8
+[    0.113332][    T0] KP     cred offset: 830
+[    0.114166][    T0] KP     real_cred offset: 838
+[    0.115206][    T0] KP     seccomp offset: 900
+[    0.116488][    T0] KP     active_mm offset: 5a8
+[    0.120071][    T0] KP struct cred: 
+[    0.121480][    T0] KP     full_cap capability: ffffffff
+[    0.122807][    T0] KP     cap_effective offset: 38
+[    0.123753][    T0] KP     cap_inheritable offset: 28
+[    0.124891][    T0] KP     cap_permitted offset: 30
+[    0.125842][    T0] KP     cap_bset offset: 40
+[    0.126861][    T0] KP     securebits offset: 24
+[    0.128499][    T0] KP     uid offset: 4
+[    0.129452][    T0] KP     euid offset: 14
+[    0.130247][    T0] KP     gid offset: 8
+[    0.131020][    T0] KP     egid offset: 18
+[    0.132056][    T0] KP     fsuid offset: 1c
+[    0.133070][    T0] KP     fsgid offset: 20
+[    0.136254][    T0] KP     suid offset: c
+[    0.137849][    T0] KP     sgid offset: 10
+[    0.139446][    T0] KP     cap_ambient offset: 48
+[    0.141168][    T0] KP struct mm_struct: 
+[    0.142046][    T0] KP     pgd offset: 38
+[    0.143173][    T0] KP btf loaded, types: 3358428, strs: 2327913
+[    0.144327][    T0] KP struct offsets: overriding with BTF
+[    0.146615][    T0] KP resolve_struct done: 0
+[    0.147624][    T0] [+] KP V Hook func: ffffffe21741e26c, origin: ffffffe21741e26c, replace: ffffffe3964c05d4, relocate: ffffffe396501ec8, chain: ffffffe396501e70
+[    0.150300][    T0] [+] KP V Hook func: ffffffe21741e26c succsseed
+[    0.151511][    T0] [+] KP V Hook func: ffffffe21741d08c, origin: ffffffe21741d08c, replace: ffffffe3964c0480, relocate: ffffffe3965023d8, chain: ffffffe396502380
+[    0.154319][    T0] [+] KP V Hook func: ffffffe21741d08c succsseed
+[    0.155521][    T0] KP bypass_selinux done: 0
+[    0.156806][    T0] [+] KP V Wrap func: ffffffe216ea9bdc, origin: ffffffe216ea9bdc, replace: ffffffe396502b10, relocate: ffffffe3965028e8, chain: ffffffe396502890
+[    0.159422][    T0] [+] KP V Wrap chain add: ffffffe216ea9bdc, 0, ffffffe3964c9ff0 successed
+[    0.161156][    T0] [+] KP V Wrap func: ffffffe216ea9bdc succsseed
+[    0.162361][    T0] KP hook copy_process: ffffffe216ea9bdc, rc: 0
+[    0.163629][    T0] [+] KP V Wrap func: ffffffe216eb3838, origin: ffffffe216eb3838, replace: ffffffe396503020, relocate: ffffffe396502df8, chain: ffffffe396502da0
+[    0.166391][    T0] [+] KP V Wrap chain add: ffffffe216eb3838, ffffffe3964c9d10, 0 successed
+[    0.168075][    T0] [+] KP V Wrap func: ffffffe216eb3838 succsseed
+[    0.169322][    T0] KP hook do_exit: ffffffe216eb3838, rc: 0
+[    0.170555][    T0] KP task_observer done: 0
+[    0.171559][    T0] [+] KP V syscall hook add: nr 45 compat 0, ffffffe3964c6a90, 0
+[    0.173032][    T0] KP supercall_install done: 0
+[    0.174019][    T0] KP kstorage_init done: 0
+[    0.175485][    T0] [+] KP D su_add_allow_uid: uid: 2000, to_uid: 0, rc: 0
+[    0.176878][    T0] [+] KP D su_add_allow_uid: uid: 0, to_uid: 0, rc: 0
+[    0.178168][    T0] KP su config: 0, enable: 0, wrap: 0
+[    0.179344][    T0] [+] KP V syscall hook add: nr 221 compat 0, ffffffe3964c66f4, 0
+[    0.180823][    T0] KP hook __NR_execve rc: 0
+[    0.181667][    T0] [+] KP V syscall hook add: nr 281 compat 0, ffffffe3964c6714, 0
+[    0.183098][    T0] KP hook __NR_execveat rc: 0
+[    0.184161][    T0] [+] KP V syscall hook add: nr 11 compat 1, ffffffe3964c66f4, 0
+[    0.185608][    T0] KP hook 32 __NR_execve rc: 0
+[    0.186493][    T0] [+] KP V syscall hook add: nr 387 compat 1, ffffffe3964c6714, 0
+[    0.187936][    T0] KP hook 32 __NR_execveat rc: 0
+[    0.189044][    T0] [+] KP V syscall hook add: nr 79 compat 0, ffffffe3964c5de4, 0
+[    0.190471][    T0] KP hook __NR3264_fstatat rc: 0
+[    0.191374][    T0] [+] KP V syscall hook add: nr 48 compat 0, ffffffe3964c5de4, 0
+[    0.192825][    T0] KP hook __NR_faccessat rc: 0
+[    0.193849][    T0] [+] KP V syscall hook add: nr 327 compat 1, ffffffe3964c5de4, 0
+[    0.195271][    T0] KP hook 32 __NR_fstatat64 rc: 0
+[    0.196207][    T0] [+] KP V syscall hook add: nr 334 compat 1, ffffffe3964c5de4, 0
+[    0.197677][    T0] KP hook 32 __NR_faccessat rc: 0
+[    0.198774][    T0] KP su_compat_init done: 0
+[    0.199750][    T0] [+] KP V Wrap func: ffffffe21743c11c, origin: ffffffe21743c11c, replace: ffffffe396503530, relocate: ffffffe396503308, chain: ffffffe3965032b0
+[    0.202346][    T0] [+] KP V Wrap chain add: ffffffe21743c11c, 0, ffffffe3964c4bb0 successed
+[    0.204122][    T0] [+] KP V Wrap func: ffffffe21743c11c succsseed
+[    0.205316][    T0] KP selinux_sepolicy: hooked security_load_policy @ ffffffe21743c11c
+[    0.206798][    T0] KP selinux_sepolicy_boot_init: 0
+[    0.207814][    T0] [+] KP V syscall hook add: nr 221 compat 0, ffffffe3964ceb24, ffffffe3964ceae0
+[    0.209690][    T0] KP hook __NR_execve rc: 0
+[    0.210535][    T0] [+] KP V syscall hook add: nr 281 compat 0, ffffffe3964ceb24, ffffffe3964ceae0
+[    0.212190][    T0] KP hook __NR_execveat rc: 0
+[    0.213093][    T0] KP resolve_pt_regs done: 0
+[    0.214214][    T0] [+] KP V Wrap func: ffffffe217436030, origin: ffffffe217436030, replace: ffffffe396503a40, relocate: ffffffe396503818, chain: ffffffe3965037c0
+[    0.216850][    T0] [+] KP V Wrap chain add: ffffffe217436030, ffffffe3964d1570, ffffffe3964d1580 successed
+[    0.218814][    T0] [+] KP V Wrap func: ffffffe217436030 succsseed
+[    0.220006][    T0] KP android_sepolicy_flags_fix done: 0
+[    0.221066][    T0] [+] KP V syscall hook add: nr 221 compat 0, ffffffe3964d4ab4, ffffffe3964d1c40
+[    0.222862][    T0] KP hook __NR_execve rc: 0
+[    0.223730][    T0] [+] KP V syscall hook add: nr 281 compat 0, ffffffe3964d4ae0, ffffffe3964d2184
+[    0.225389][    T0] KP hook __NR_execveat rc: 0
+[    0.226258][    T0] KP Droidspaces: preserve original init.rc for existing root
+[    0.228246][    T0] [+] KP V Wrap func: ffffffe21741750c, origin: ffffffe21741750c, replace: ffffffe396503f50, relocate: ffffffe396503d28, chain: ffffffe396503cd0
+[    0.230888][    T0] [+] KP V Wrap chain add: ffffffe21741750c, 0, ffffffe3964d4770 successed
+[    0.233188][    T0] [+] KP V Wrap func: ffffffe21741750c succsseed
+[    0.234381][    T0] KP hook security_inode_rename rc: 0
+[    0.235444][    T0] [+] KP V Wrap func: ffffffe21789effc, origin: ffffffe21789effc, replace: ffffffe396504460, relocate: ffffffe396504238, chain: ffffffe3965041e0
+[    0.238243][    T0] [+] KP V Wrap chain add: ffffffe21789effc, ffffffe3964d1f94, 0 successed
+[    0.239918][    T0] [+] KP V Wrap func: ffffffe21789effc succsseed
+[    0.241194][    T0] KP hook input_handle_event rc: 0
+[    0.242178][    T0] KP android_user_init done: 0
+[    0.259360][    T1] KP event: pre-kernel-init
+[    0.279931][    T1] cblist_init_generic: Setting adjustable number of callback queues.
+[    0.281428][    T1] cblist_init_generic: Setting shift to 1 and lim to 1.
+[    0.284874][    T1] cblist_init_generic: Setting adjustable number of callback queues.
+[    0.286344][    T1] cblist_init_generic: Setting shift to 1 and lim to 1.
+[    0.291611][    T1] rcu: Hierarchical SRCU implementation.
+[    0.292865][    T1] rcu: 	Max phase no-delay instances is 1000.
+[    0.315850][    T1] dyndbg: Ignore empty _ddebug table in a CONFIG_DYNAMIC_DEBUG_CORE build
+[    0.319602][    T1] Platform MSI: its@8080000 domain created
+[    0.321373][    T1] PCI/MSI: /intc@8000000/its@8080000 domain created
+[    0.328927][    T1] EFI services will not be available.
+[    0.336393][    T1] smp: Bringing up secondary CPUs ...
+[    0.351368][    T0] Detected PIPT I-cache on CPU1
+[    0.355795][    T0] GICv3: CPU1: found redistributor 1 region 0:0x00000000080c0000
+[    0.357041][    T0] GICv3: CPU1: using allocated LPI pending table @0x0000000100110000
+[    0.359730][    T0] CPU1: Booted secondary processor 0x0000000001 [0x000f0510]
+[    0.365090][    T1] smp: Brought up 1 node, 2 CPUs
+[    0.371777][    T1] SMP: Total of 2 processors activated.
+[    0.373022][    T1] CPU features: detected: Branch Target Identification
+[    0.374328][    T1] CPU features: detected: 32-bit EL0 Support
+[    0.375635][    T1] CPU features: detected: 32-bit EL1 Support
+[    0.377676][    T1] CPU features: detected: ARMv8.4 Translation Table Level
+[    0.378993][    T1] CPU features: detected: Data cache clean to the PoU not required for I/D coherence
+[    0.381038][    T1] CPU features: detected: Common not Private translations
+[    0.382342][    T1] CPU features: detected: CRC32 instructions
+[    0.383444][    T1] CPU features: detected: Data cache clean to Point of Deep Persistence
+[    0.385215][    T1] CPU features: detected: Data cache clean to Point of Persistence
+[    0.386644][    T1] CPU features: detected: E0PD
+[    0.387521][    T1] CPU features: detected: Enhanced Privileged Access Never
+[    0.389073][    T1] CPU features: detected: Generic authentication (architected QARMA5 algorithm)
+[    0.390847][    T1] CPU features: detected: RCpc load-acquire (LDAPR)
+[    0.392057][    T1] CPU features: detected: LSE atomic instructions
+[    0.393363][    T1] CPU features: detected: Privileged Access Never
+[    0.394556][    T1] CPU features: detected: RAS Extension Support
+[    0.395815][    T1] CPU features: detected: Random Number Generator
+[    0.397108][    T1] CPU features: detected: Speculation barrier (SB)
+[    0.398301][    T1] CPU features: detected: Stage-2 Force Write-Back
+[    0.399488][    T1] CPU features: detected: Trap EL0 IMPLEMENTATION DEFINED functionality
+[    0.401245][    T1] CPU features: detected: TLB range maintenance instructions
+[    0.402651][    T1] CPU features: detected: Speculative Store Bypassing Safe (SSBS)
+[    0.404050][    T1] CPU features: detected: Scalable Vector Extension
+[    0.424791][    T1] SVE: maximum available vector length 256 bytes per vector
+[    0.429935][    T1] SVE: default vector length 64 bytes per vector
+[    0.433352][    T1] CPU: All CPU(s) started at EL1
+[    0.434570][    T1] alternatives: applying system-wide alternatives
+[    0.590726][    T1] devtmpfs: initialized
+[    0.690860][    T1] Registered cp15_barrier emulation handler
+[    0.692950][    T1] Registered setend emulation handler
+[    0.699106][    T1] clocksource: jiffies: mask: 0xffffffff max_cycles: 0xffffffff, max_idle_ns: 7645041785100000 ns
+[    0.702020][    T1] futex hash table entries: 512 (order: 3, 32768 bytes, linear)
+[    0.710632][    T1] pinctrl core: initialized pinctrl subsystem
+[    0.741907][    T1] NET: Registered PF_NETLINK/PF_ROUTE protocol family
+[    0.774132][    T1] DMA: preallocated 1024 KiB GFP_KERNEL pool for atomic allocations
+[    0.778445][    T1] DMA: preallocated 1024 KiB GFP_KERNEL|GFP_DMA32 pool for atomic allocations
+[    0.780939][    T1] audit: initializing netlink subsys (disabled)
+[    0.789216][   T30] audit: type=2000 audit(0.600:1): state=initialized audit_enabled=0 res=1
+[    0.796694][    T1] thermal_sys: Registered thermal governor 'step_wise'
+[    0.796843][    T1] thermal_sys: Registered thermal governor 'user_space'
+[    0.798222][    T1] thermal_sys: Registered thermal governor 'power_allocator'
+[    0.800347][    T1] cpuidle: using governor menu
+[    0.805841][    T1] hw-breakpoint: found 6 breakpoint and 4 watchpoint registers.
+[    0.808491][    T1] ASID allocator initialised with 65536 entries
+[    0.814252][    T1] Serial: AMBA PL011 UART driver
+[    0.931262][    T1] 9000000.pl011: ttyAMA0 at MMIO 0x9000000 (irq = 13, base_baud = 0) is a PL011 rev1
+[    0.934791][    T1] printk: console [ttyAMA0] enabled
+[    0.934791][    T1] printk: console [ttyAMA0] enabled
+[    0.936795][    T1] printk: bootconsole [pl11] disabled
+[    0.936795][    T1] printk: bootconsole [pl11] disabled
+[    0.982750][    T1] KASLR enabled
+[    1.210760][    T1] iommu: Default domain type: Translated 
+[    1.214567][    T1] iommu: DMA domain TLB invalidation policy: strict mode 
+[    1.230088][    T1] SCSI subsystem initialized
+[    1.234345][    T1] usbcore: registered new interface driver usbfs
+[    1.236068][    T1] usbcore: registered new interface driver hub
+[    1.237640][    T1] usbcore: registered new device driver usb
+[    1.242189][    T1] mc: Linux media interface: v0.10
+[    1.243806][    T1] videodev: Linux video capture interface: v2.00
+[    1.246735][    T1] pps_core: LinuxPPS API ver. 1 registered
+[    1.248308][    T1] pps_core: Software ver. 5.3.6 - Copyright 2005-2007 Rodolfo Giometti <giometti@linux.it>
+[    1.251300][    T1] PTP clock support registered
+[    1.252892][    T1] EDAC MC: Ver: 3.0.0
+[    1.273959][    T1] Advanced Linux Sound Architecture Driver Initialized.
+[    1.300819][    T1] clocksource: Switched to clocksource arch_sys_counter
+[    1.310747][    T1] VFS: Disk quotas dquot_6.6.0
+[    1.312694][    T1] VFS: Dquot-cache hash table entries: 512 (order 0, 4096 bytes)
+[    1.342176][    T1] NET: Registered PF_INET protocol family
+[    1.347390][    T1] IP idents hash table entries: 131072 (order: 8, 1048576 bytes, linear)
+[    1.373188][    T1] tcp_listen_portaddr_hash hash table entries: 4096 (order: 4, 65536 bytes, linear)
+[    1.376994][    T1] Table-perturb hash table entries: 65536 (order: 6, 262144 bytes, linear)
+[    1.380330][    T1] TCP established hash table entries: 65536 (order: 7, 524288 bytes, linear)
+[    1.384642][    T1] TCP bind hash table entries: 65536 (order: 9, 2097152 bytes, linear)
+[    1.390559][    T1] TCP: Hash tables configured (established 65536 bind 65536)
+[    1.394486][    T1] UDP hash table entries: 4096 (order: 5, 131072 bytes, linear)
+[    1.397175][    T1] UDP-Lite hash table entries: 4096 (order: 5, 131072 bytes, linear)
+[    1.401291][    T1] NET: Registered PF_UNIX/PF_LOCAL protocol family
+[    1.403551][    T1] NET: Registered PF_XDP protocol family
+[    1.405473][    T1] PCI: CLS 0 bytes, default 64
+[    1.416699][    T1] kvm [1]: HYP mode not available
+[    1.416729][   T10] Trying to unpack rootfs image as initramfs...
+[    1.453297][    T1] Initialise system trusted keyrings
+[    1.458035][    T1] workingset: timestamp_bits=46 max_order=21 bucket_order=0
+[    1.661342][    T1] fuse: init (API version 7.38)
+[    1.776091][    T1] Key type asymmetric registered
+[    1.777586][    T1] Asymmetric key parser 'x509' registered
+[    1.779678][    T1] Block layer SCSI generic (bsg) driver version 0.4 loaded (major 239)
+[    1.786243][    T1] io scheduler mq-deadline registered
+[    1.788148][    T1] io scheduler kyber registered
+[    1.792693][    T1] io scheduler bfq registered
+[    1.818122][    T1] pl061_gpio 9030000.pl061: PL061 GPIO chip registered
+[    1.824883][    T1] pci-host-generic 4010000000.pcie: host bridge /pcie@10000000 ranges:
+[    1.827423][    T1] pci-host-generic 4010000000.pcie:       IO 0x003eff0000..0x003effffff -> 0x0000000000
+[    1.829744][    T1] pci-host-generic 4010000000.pcie:      MEM 0x0010000000..0x003efeffff -> 0x0010000000
+[    1.831209][    T1] pci-host-generic 4010000000.pcie:      MEM 0x8000000000..0xffffffffff -> 0x8000000000
+[    1.833393][    T1] pci-host-generic 4010000000.pcie: Memory resource size exceeds max for 32 bits
+[    1.835660][    T1] pci-host-generic 4010000000.pcie: ECAM at [mem 0x4010000000-0x401fffffff] for [bus 00-ff]
+[    1.840624][    T1] pci-host-generic 4010000000.pcie: PCI host bridge to bus 0000:00
+[    1.842010][    T1] pci_bus 0000:00: root bus resource [bus 00-ff]
+[    1.843042][    T1] pci_bus 0000:00: root bus resource [io  0x0000-0xffff]
+[    1.844369][    T1] pci_bus 0000:00: root bus resource [mem 0x10000000-0x3efeffff]
+[    1.845526][    T1] pci_bus 0000:00: root bus resource [mem 0x8000000000-0xffffffffff]
+[    1.848611][    T1] pci 0000:00:00.0: [1b36:0008] type 00 class 0x060000
+[    1.905203][    T1] printk: console [ttynull0] enabled
+[    2.041757][    T1] brd: module loaded
+[    2.202143][    T1] loop: module loaded
+[    2.230087][    T1] wireguard: WireGuard 1.0.0 loaded. See www.wireguard.com for information.
+[    2.232435][    T1] wireguard: Copyright (C) 2015-2019 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.
+[    2.245740][    T1] MACsec IEEE 802.1AE
+[    2.257328][    T1] tun: Universal TUN/TAP device driver, 1.6
+[    2.273554][    T1] usbcore: registered new interface driver uas
+[    2.276049][    T1] usbcore: registered new interface driver usb-storage
+[    2.282504][    T1] usbcore: registered new interface driver xpad
+[    2.296809][    T1] rtc-pl031 9010000.pl031: registered as rtc0
+[    2.299231][    T1] rtc-pl031 9010000.pl031: setting system clock to 2026-11-07T15:43:15 UTC (1794066195)
+[    2.304468][    T1] gspca_main: v2.14.0 registered
+[    2.306552][    T1] usbcore: registered new interface driver uvcvideo
+[    2.312832][    T1] device-mapper: uevent: version 1.0.3
+[    2.318943][    T1] device-mapper: ioctl: 4.47.0-ioctl (2022-07-28) initialised: dm-devel@redhat.com
+[    2.331059][    T1] sdhci: Secure Digital Host Controller Interface driver
+[    2.333187][    T1] sdhci: Copyright(c) Pierre Ossman
+[    2.334565][    T1] sdhci-pltfm: SDHCI platform and OF driver helper
+[    2.342750][    T1] hid: raw HID events driver (C) Jiri Kosina
+[    2.363362][    T1] usbcore: registered new interface driver usbhid
+[    2.365219][    T1] usbhid: USB HID core driver
+[    2.375454][    T1] ashmem: initialized
+[    2.390807][    T1] hw perfevents: enabled with armv8_pmuv3 PMU driver, 7 counters available
+[    2.397488][    T1] gnss: GNSS driver registered with major 504
+[    2.404458][    T1] usbcore: registered new interface driver snd-usb-audio
+[    2.411597][    T1] GACT probability NOT on
+[    2.413250][    T1] Mirror/redirect action on
+[    2.415004][    T1] netem: version 1.3
+[    2.417673][    T1] u32 classifier
+[    2.418616][    T1]     input device check on
+[    2.419927][    T1]     Actions configured
+[    2.867643][    T1] xt_time: kernel timezone is -0000
+[    2.870092][    T1] ipip: IPv4 and MPLS over IPv4 tunneling driver
+[    2.878022][    T1] gre: GRE over IPv4 demultiplexor driver
+[    2.879547][    T1] ip_gre: GRE over IPv4 tunneling driver
+[    2.897213][    T1] IPv4 over IPsec tunneling driver
+[    2.906244][    T1] Initializing XFRM netlink socket
+[    2.907998][    T1] IPsec XFRM device driver
+[    2.918223][    T1] NET: Registered PF_INET6 protocol family
+[    2.942939][    T1] Segment Routing with IPv6
+[    2.944662][    T1] In-situ OAM (IOAM) with IPv6
+[    2.948290][    T1] mip6: Mobile IPv6
+[    2.957885][    T1] sit: IPv6, IPv4 and MPLS over IPv4 tunneling driver
+[    2.971949][    T1] ip6_gre: GRE over IPv6 tunneling driver
+[    2.980275][    T1] NET: Registered PF_PACKET protocol family
+[    2.981994][    T1] NET: Registered PF_KEY protocol family
+[    2.988248][    T1] NET: Registered PF_VSOCK protocol family
+[    3.000202][    T1] registered taskstats version 1
+[    3.001971][    T1] Loading compiled-in X.509 certificates
+[    3.004891][    T1] page_owner is disabled
+[    3.008803][    T1] Key type .fscrypt registered
+[    3.010064][    T1] Key type fscrypt-provisioning registered
+[    3.031180][    T1] input: gpio-keys as /devices/platform/gpio-keys/input/input0
+[    3.049837][    T1] clk: Disabling unused clocks
+[    3.051705][    T1] ALSA device list:
+[    3.053058][    T1]   No soundcards found.
+[    3.058605][    T1] uart-pl011 9000000.pl011: no DMA platform data
+[    3.121107][    T1] Freeing unused kernel memory: 4224K
+[    3.123534][    T1] Run /init as init process
+[    3.154576][    T1] KP event: post-kernel-init
+SMOKE_INIT_REACHED
+SMOKE_INIT_RC_BYTES=32
+SMOKE_ORIGINAL_INIT_PASS
+[    3.165365][    T1] [+] KP I hello1158
+SMOKE_HELLO=290984280
+SMOKE_VERSION=3337
+[    3.168924][    T1] [+] KP D load_module_path_event: /demo.kpm
+[    3.170104][    T1] [+] KP D load_module_path_event: module size: d90
+[    3.172149][    T1] [+] KP D loading module: 
+[    3.172849][    T1] [+] KP D     name: kpm-nbdemo
+[    3.173584][    T1] [+] KP D     version: 1.0.0
+[    3.174278][    T1] [+] KP D     license: GPL v2
+[    3.174991][    T1] [+] KP D     author: Droidspaces
+[    3.175986][    T1] [+] KP D     description: Minimal KPM example: logs on load, echoes control strings
+[    3.177903][    T1] [+] KP I alloc module size: 3496
+[    3.178975][    T1] [+] KP D final section addresses:
+[    3.179967][    T1] [+] KP D     .text ffffffe396800008 10c
+[    3.180947][    T1] [+] KP D     .rodata.str1.8 ffffffe396801008 6c
+[    3.181879][    T1] [+] KP D     .kpm.info ffffffe396801074 86
+[    3.182745][    T1] [+] KP D     .data ffffffe396802008 0
+[    3.183564][    T1] [+] KP D     .kpm.ctl0 ffffffe396802008 8
+[    3.184713][    T1] [+] KP D     .kpm.exit ffffffe396802010 8
+[    3.185599][    T1] [+] KP D     .kpm.init ffffffe396802018 8
+[    3.186485][    T1] [+] KP D     .bss ffffffe396802020 0
+[    3.187272][    T1] [+] KP D     .symtab ffffffe396803008 300
+[    3.188445][    T1] [+] KP D     .strtab ffffffe3968033ad f1
+[    3.189912][    T1] kpm-nbdemo: init, event=load-file args=qemu
+[    3.190811][    T1] kpm-nbdemo: kernelpatch version d09
+[    3.191612][    T1] [+] KP I load_module_ex: [kpm-nbdemo] succeed with [qemu] 
+SMOKE_LOAD=0
+[    3.194384][    T1] [+] KP D get_module_nums: 1
+SMOKE_NUMS=1
+[    3.196018][    T1] [+] KP I module_control0: name kpm-nbdemo, args: smoke
+[    3.197617][    T1] [+] KP I module_control0: name: kpm-nbdemo, rc: 0
+SMOKE_CONTROL=0
+echo: smoke
+[    3.199599][    T1] [-] KP E unload_module: name: kpm-nbdemo
+[    3.200896][    T1] kpm-nbdemo: exit
+[    3.201750][    T1] [+] KP I unload_module: name: kpm-nbdemo, rc: 0
+SMOKE_UNLOAD=0
+[    3.203433][    T1] [+] KP D get_module_nums: 0
+SMOKE_FINAL_NUMS=0
+SMOKE_KPM_PASS
+SMOKE_NAMESPACES=0
+SMOKE_CGROUP2=0
+SMOKE_DEVTMPFS=0
+SMOKE_CONTAINER_PASS
+SMOKE_DONE
+[    3.224649][    T1] reboot: Power down

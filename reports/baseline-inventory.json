@@ -1,0 +1,95 @@
+{
+  "captured_utc": "2026-11-07T13:39:43.067791+00:00",
+  "repository_commit": "903fafc39e67d7f3e499238baeb09519a4e8d6a8",
+  "repository_status": "?? .kp/\n?? temp.gz",
+  "kernel_commit": "0b76321acf295c2f4819151c9e6aeec122b924b0",
+  "kernel_diff_sha256": "bf3bf6561b843f03167cde1b2f9435446809efddd83472559f00888065854741",
+  "baseline": {
+    "bytes": 35916288,
+    "sha256": "e8485e67a83e63179a8d8a73464889334cbe2c7fbe4d464c1307560e20a63672",
+    "branch_target": 29533396,
+    "image_size": 36634624,
+    "entry_branch": "0x1470a934",
+    "branch_offset": 4
+  },
+  "config_sha256": "09685423bbac8672b6c23b991863faaef3612684d0cf84a01f71e94b71d1715e",
+  "kernel_release": "6.1.176-android14-11-g0b76321acf29-dirty-ab14529422-nbkernel",
+  "kernelpatch": {
+    "KP-0.12.2": "8eebc2e00235e64e3cd56b4918287415188cc752",
+    "KernelPatch": "d4c88d6672687456b299e4b5153c24dc979d789b"
+  },
+  "packages": [
+    {
+      "name": "AnyKernel3_zorn_droidspaces-base.zip",
+      "sha256": "eccbfa43d692cc3fc96d32e2bb36e6ebbbd55f7c55868e688ab043426bce627e",
+      "crc_ok": true,
+      "image": {
+        "bytes": 35916288,
+        "sha256": "e8485e67a83e63179a8d8a73464889334cbe2c7fbe4d464c1307560e20a63672",
+        "branch_target": 29533396,
+        "image_size": 36634624,
+        "entry_branch": "0x1470a934",
+        "branch_offset": 4
+      },
+      "matches_baseline": true,
+      "partition_settings": [
+        "block=boot;",
+        "is_slot_device=auto;"
+      ]
+    },
+    {
+      "name": "AnyKernel3_zorn_droidspaces.zip",
+      "sha256": "03f3fe25c8e3503cb12dd3949dd6ed48b96f434a32fd2d1dd0a3d20dfbfa70f5",
+      "crc_ok": true,
+      "image": {
+        "bytes": 35916288,
+        "sha256": "629f709c01cb483cd92176a42fdc5e61e60bb2b763e750001dac67830e4e5f0f",
+        "branch_target": 29533396,
+        "image_size": 36634624,
+        "entry_branch": "0x1470a934",
+        "branch_offset": 4
+      },
+      "matches_baseline": false,
+      "partition_settings": [
+        "block=boot;",
+        "is_slot_device=auto;"
+      ]
+    },
+    {
+      "name": "AnyKernel3_zorn_droidspaces_kpm-0.12.2.zip",
+      "sha256": "829fb845f667ead364747060d12ac3070d1fa40d640a60002c2935fc08fddac9",
+      "crc_ok": true,
+      "image": {
+        "bytes": 36098432,
+        "sha256": "39a6c01f2f3653f722d0017116a9e1d179d5ac325f8f122d906db5c71599afe8",
+        "branch_target": 35921920,
+        "image_size": 36634624,
+        "entry_branch": "0x148907ff",
+        "branch_offset": 4
+      },
+      "matches_baseline": false,
+      "partition_settings": [
+        "block=boot;",
+        "is_slot_device=auto;"
+      ]
+    },
+    {
+      "name": "AnyKernel3_zorn_droidspaces_kpm.zip",
+      "sha256": "54aeefb0a8d2e79b66372cd77494ce6a65c2160927e1c9490668b0bdafc8f92c",
+      "crc_ok": true,
+      "image": {
+        "bytes": 36280512,
+        "sha256": "fad60b7a15eb916ba76c84d7a80fd935f08d805e877746066a21755154682329",
+        "branch_target": 35921920,
+        "image_size": 36999168,
+        "entry_branch": "0x148907ff",
+        "branch_offset": 4
+      },
+      "matches_baseline": false,
+      "partition_settings": [
+        "block=boot;",
+        "is_slot_device=auto;"
+      ]
+    }
+  ]
+}

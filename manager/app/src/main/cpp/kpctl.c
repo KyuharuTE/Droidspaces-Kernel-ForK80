@@ -93,7 +93,20 @@ int main(int argc, char **argv) {
         return 2;
     }
 
+    char key_input[66];
     const char *key = argv[1];
+    if (strcmp(key, "--key-stdin") == 0) {
+        if (!fgets(key_input, sizeof(key_input), stdin)) {
+            fprintf(stderr, "cannot read superkey from stdin\n");
+            return 2;
+        }
+        key_input[strcspn(key_input, "\r\n")] = '\0';
+        if (!key_input[0] || strlen(key_input) > 64) {
+            fprintf(stderr, "invalid superkey length\n");
+            return 2;
+        }
+        key = key_input;
+    }
     const char *cmd = argv[2];
     long r;
 

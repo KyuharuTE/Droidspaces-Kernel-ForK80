@@ -123,11 +123,13 @@ done
 # --- Verify ----------------------------------------------------------------
 [ -s "$OUT" ] || die "no output produced"
 
-if ! "${CROSS}readelf" -h "$OUT" | grep -q 'REL (Relocatable)'; then
+ELF_HEADER="$(LC_ALL=C "${CROSS}readelf" -h "$OUT")"
+if ! grep -qE 'Type:[[:space:]]+REL([[:space:]]|$)' <<<"$ELF_HEADER"; then
     die "$OUT is not an ET_REL relocatable object"
 fi
+ELF_SECTIONS="$(LC_ALL=C "${CROSS}readelf" -SW "$OUT")"
 for section in .kpm.info .kpm.init .kpm.exit; do
-    "${CROSS}readelf" -S "$OUT" | grep -q "$section" \
+    grep -qF "$section" <<<"$ELF_SECTIONS" \
         || die "$OUT is missing $section; the loader will reject it"
 done
 

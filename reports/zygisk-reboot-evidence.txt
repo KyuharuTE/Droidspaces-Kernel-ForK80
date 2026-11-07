@@ -1,0 +1,36 @@
+[    1.534928] init: 'writepid /dev/cpuset/foreground/tasks' is converted into 'task_profiles ProcessCapacityHigh' for service iorapd
+[    1.538269] init: Parsing file /vendor/etc/init/hostapd.android.rc...
+[   14.673124] selinux: SELinux: Skipping restorecon on directory(/data/system/heapdump)
+[   75.238337] init: starting service 'exec 15 (/system/bin/truncate su -Z u:r:magisk:s0 exec /data/adb/apd -s <redacted> post-fs-data)'...
+[   75.239202] init: ... started service 'exec 15 (/system/bin/truncate su -Z u:r:magisk:s0 exec /data/adb/apd -s <redacted> post-fs-data)' has pid 1516
+[   75.239208] init: SVC_EXEC service 'exec 15 (/system/bin/truncate su -Z u:r:magisk:s0 exec /data/adb/apd -s <redacted> post-fs-data)' pid 1516 (uid 0 gid 0+0 context default) started; waiting...
+[   75.243617] init: Service 'exec 15 (/system/bin/truncate su -Z u:r:magisk:s0 exec /data/adb/apd -s <redacted> post-fs-data)' (pid 1516) exited with status 1 waiting took 0.004000 seconds
+[   75.243626] init: Sending SIGKILL to service 'exec 15 (/system/bin/truncate su -Z u:r:magisk:s0 exec /data/adb/apd -s <redacted> post-fs-data)' (pid 1516) process group...
+[   75.419924] init: processing action (post-fs-data) from (/vendor/etc/init/hostapd.android.rc:9)
+[   79.434672] init: starting service 'iorapd'...
+[   79.437007] KernelSU: hook_manager: unmark 2833 exec /system_ext/bin/iorapd
+[   79.437829] init: ... started service 'iorapd' has pid 2833
+[   79.658410] init: service 'iorapd' requested start, but it is already running (flags: 4, pid: 2833, started 222ms ago)
+[   79.966787] init: starting service 'exec 28 (/system/bin/truncate su -Z u:r:magisk:s0 exec /data/adb/apd -s <redacted> services)'...
+[   79.968888] init: ... started service 'exec 28 (/system/bin/truncate su -Z u:r:magisk:s0 exec /data/adb/apd -s <redacted> services)' has pid 3118
+[   79.968903] init: SVC_EXEC service 'exec 28 (/system/bin/truncate su -Z u:r:magisk:s0 exec /data/adb/apd -s <redacted> services)' pid 3118 (uid 0 gid 0+0 context default) started; waiting...
+[   79.998403] init: Service 'exec 28 (/system/bin/truncate su -Z u:r:magisk:s0 exec /data/adb/apd -s <redacted> services)' (pid 3118) exited with status 1 waiting took 0.030000 seconds
+[   79.998420] init: Sending SIGKILL to service 'exec 28 (/system/bin/truncate su -Z u:r:magisk:s0 exec /data/adb/apd -s <redacted> services)' (pid 3118) process group...
+[   82.376248] servicemanager: Caller(pid=2421,uid=1000,sid=u:r:system_server:s0) Found android.hardware.wifi.hostapd.IHostapd/default in device VINTF manifest.
+[   82.378404] servicemanager: Caller(pid=2421,uid=1000,sid=u:r:system_server:s0) Found android.hardware.wifi.hostapd.IHostapd/default in device VINTF manifest.
+[   90.295708] init: starting service 'exec 32 (/system/bin/truncate su -Z u:r:magisk:s0 exec /data/adb/apd -s <redacted> boot-completed)'...
+[   90.298867] init: ... started service 'exec 32 (/system/bin/truncate su -Z u:r:magisk:s0 exec /data/adb/apd -s <redacted> boot-completed)' has pid 6541
+[   90.298891] init: SVC_EXEC service 'exec 32 (/system/bin/truncate su -Z u:r:magisk:s0 exec /data/adb/apd -s <redacted> boot-completed)' pid 6541 (uid 0 gid 0+0 context default) started; waiting...
+[   90.339423] init: Service 'exec 32 (/system/bin/truncate su -Z u:r:magisk:s0 exec /data/adb/apd -s <redacted> boot-completed)' (pid 6541) exited with status 1 waiting took 0.041000 seconds
+[   90.339442] init: Sending SIGKILL to service 'exec 32 (/system/bin/truncate su -Z u:r:magisk:s0 exec /data/adb/apd -s <redacted> boot-completed)' (pid 6541) process group...
+[  107.310583] type=1400 audit(1794065716.333:3743): avc:  denied  { search } for  comm="libksud.so" name="tests" dev="dm-49" ino=128 scontext=u:r:untrusted_app:s0:c163,c256,c512,c768 tcontext=u:object_r:shell_test_data_file:s0 tclass=dir permissive=0 app=me.weishu.kernelsu
+[  107.310610] type=1400 audit(1794065716.333:3744): avc:  denied  { search } for  comm="libksud.so" name="tests" dev="dm-49" ino=128 scontext=u:r:untrusted_app:s0:c163,c256,c512,c768 tcontext=u:object_r:shell_test_data_file:s0 tclass=dir permissive=0 app=me.weishu.kernelsu
+[  107.310633] type=1400 audit(1794065716.333:3745): avc:  denied  { search } for  comm="libksud.so" name="tests" dev="dm-49" ino=128 scontext=u:r:untrusted_app:s0:c163,c256,c512,c768 tcontext=u:object_r:shell_test_data_file:s0 tclass=dir permissive=0 app=me.weishu.kernelsu
+[  110.844485] PowerDet:Cpu usage:0% user + 29% kernel, comm:kswapd0, pid:92, cpu_mask:63, pcomm:kswapd0, ppid:92
+[  117.790713] type=1400 audit(1794065726.825:3864): avc:  denied  { search } for  comm="libksud.so" name="tests" dev="dm-49" ino=128 scontext=u:r:untrusted_app:s0:c163,c256,c512,c768 tcontext=u:object_r:shell_test_data_file:s0 tclass=dir permissive=0 app=me.weishu.kernelsu
+[  117.790751] type=1400 audit(1794065726.825:3865): avc:  denied  { search } for  comm="libksud.so" name="tests" dev="dm-49" ino=128 scontext=u:r:untrusted_app:s0:c163,c256,c512,c768 tcontext=u:object_r:shell_test_data_file:s0 tclass=dir permissive=0 app=me.weishu.kernelsu
+[  117.790771] type=1400 audit(1794065726.825:3866): avc:  denied  { search } for  comm="libksud.so" name="tests" dev="dm-49" ino=128 scontext=u:r:untrusted_app:s0:c163,c256,c512,c768 tcontext=u:object_r:shell_test_data_file:s0 tclass=dir permissive=0 app=me.weishu.kernelsu
+[  117.790788] type=1400 audit(1794065726.825:3867): avc:  denied  { search } for  comm="libksud.so" name="tests" dev="dm-49" ino=128 scontext=u:r:untrusted_app:s0:c163,c256,c512,c768 tcontext=u:object_r:shell_test_data_file:s0 tclass=dir permissive=0 app=me.weishu.kernelsu
+[  140.789791] PowerDet:Cpu usage:0% user + 26% kernel, comm:kswapd0, pid:92, cpu_mask:ff, pcomm:kswapd0, ppid:92
+[  141.528675] KernelSU: newfstatat su->ksud!
+[  141.528727] KernelSU: faccessat su->ksud!

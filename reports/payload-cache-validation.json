@@ -1,0 +1,12 @@
+[
+  {
+    "attempt": 1,
+    "recompiled": true,
+    "sha256": "2ffc3d37f49b4a2a4d595d587a7f68c7a5cfa4ec556a537712f9fd57b7e738a8"
+  },
+  {
+    "attempt": 2,
+    "recompiled": false,
+    "sha256": "2ffc3d37f49b4a2a4d595d587a7f68c7a5cfa4ec556a537712f9fd57b7e738a8"
+  }
+]

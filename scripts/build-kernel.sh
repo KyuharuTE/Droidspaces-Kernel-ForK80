@@ -11,6 +11,8 @@
 
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 KERNEL_ROOT="${KERNEL_ROOT:-$PWD}"
 OUT_DIR="${OUT_DIR:-$KERNEL_ROOT/out}"
 CONFIG_FRAGMENT="${CONFIG_FRAGMENT:-}"
@@ -110,6 +112,8 @@ done
 
 info "Resolving the config with olddefconfig"
 make "${MAKE_COMMON[@]}" olddefconfig >/dev/null || die "olddefconfig failed"
+python3 "$SCRIPT_DIR/check-kernel-config.py" "$OUT_DIR/.config" \
+    || die "Configuration differs from the boot-tested baseline"
 if grep -qE '^CONFIG_KSU[A-Z0-9_]*=(y|m)$' "$OUT_DIR/.config"; then
     die "KernelSU options must not be enabled in this build"
 fi

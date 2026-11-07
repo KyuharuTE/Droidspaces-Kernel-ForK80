@@ -20,6 +20,7 @@ class KpmRepository(context: Context) {
         val root = shell.hasRoot()
         if (!root) return KpmOpResult.Failure("No root shell. Droidspaces and KPM both need root.")
         val hello = shell.kpctl(superKey, "hello")
+        if (hello.exitCode < 0) return KpmOpResult.Failure(hello.error)
         return if (hello.ok) {
             KpmOpResult.Success("Connected. KernelPatch ${hello.payload}")
         } else {

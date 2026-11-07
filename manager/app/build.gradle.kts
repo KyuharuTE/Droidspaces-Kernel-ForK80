@@ -12,8 +12,8 @@ android {
         applicationId = "com.droidspaces.kpmanager"
         minSdk = 26
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 2
+        versionName = "1.0.1"
 
         ndk {
             // The supercall is a raw syscall into the device kernel, so the
