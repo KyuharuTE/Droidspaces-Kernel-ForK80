@@ -138,21 +138,25 @@ def rewrite_supercall(source: bytes, superkey: str) -> bytes:
         "",
         text,
     )
-    # This one references `manager` and `uid`, both of which the replacement
-    # above removed, so it has to go too or the file will not compile.
-    text = re.sub(
-        r"\tif \(!manager && cmd == SUPERCALL_SU_PROFILE\)[^\n]*\r?\n"
-        r"\t\treturn -EPERM;\r?\n",
-        "",
-        text,
-    )
-    # Upstream reads the caller uid for the UID gate. With the gate gone the
-    # variable is still declared at the top of the handler, so silence the
-    # unused warning instead of leaving a warning in the middle of the build.
-    text = text.replace(
-        "\tuint32_t uid = from_kuid(current_user_ns(), current_uid());",
-        "\tuint32_t uid = from_kuid(current_user_ns(), current_uid());\n\t(void)uid;",
-    )
+    # Drop any remaining check that references the removed `manager`, line by
+    # line rather than by regex: this source is upstream and its whitespace is
+    # not ours to depend on, and a missed reference is a compile error.
+    kept: list[str] = []
+    skip_next = False
+    for line in text.split("\n"):
+        if skip_next:
+            skip_next = False
+            if line.strip().startswith("return -EPERM"):
+                continue
+        stripped = line.strip()
+        if stripped.startswith("if (") and "manager" in stripped:
+            # A guarded return on the following line goes with it.
+            skip_next = True
+            continue
+        if stripped.startswith("bool manager =") or stripped.startswith("(void)manager"):
+            continue
+        kept.append(line)
+    text = "\n".join(kept)
 
     # Declare the compiled-in key and its length bound.
     decl = (
