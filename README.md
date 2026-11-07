@@ -107,33 +107,44 @@ manager/                               Android app that loads and manages KPMs
 
 A `.kpm` is not a kernel module and not a kernel config option. It is an arm64
 ELF relocatable object that a runtime maps into kernel space, and that runtime is
-KernelPatch, which is a **binary patch** of the kernel image: `kptools` appends a
-payload (`kpimg`), redirects `primary_entry` to it, and fixes the arm64 header.
-Nothing in the kernel source changes, no exported symbol moves, and the kABI is
-untouched, so the stock vendor modules keep loading.
+KernelPatch, which provides the supercall (syscall 45) and the KPM loader.
+
+### Recommended: compile it into the kernel
+
+This is one command and needs no image patching afterwards:
 
 ```bash
 export SUPERKEY='choose-a-key'
-bash scripts/kpm-patch-image.sh        # out/arch/arm64/boot/Image -> dist/Image.kp
+bash scripts/kpm-integrated-build.sh
 ```
 
-`dist/Image.kp` replaces `Image` as the AnyKernel3 payload. Package it the usual
-way; the packaging script gzips whatever it is given.
+It vendors KernelPatch's LKM sources into `drivers/kpatch`, turns them into
+ordinary Kbuild objects (`CONFIG_KP_LKM=y`), and builds them into `vmlinux`.
+`make Image` then produces a kernel that already has the supercall and the loader,
+so the AnyKernel3 packaging step is unchanged and there is no `kptools` step.
 
-Then build a module and install the manager:
+Vendoring also replaces KernelPatch's own authentication. Upstream scans
+`/data/app` for an APatch manager APK and verifies its signing certificate, which
+ties the kernel to a third-party app; the vendored handler compares a superkey
+compiled in at vendor time instead. The manager app sends exactly that key.
+
+### Alternative: patch a finished Image
+
+`scripts/kpm-patch-image.sh` takes the opposite approach: it appends a payload
+(`kpimg`) to an already built Image and redirects `primary_entry`. Useful when
+the kernel source is not being rebuilt, but it is a step outside the build and
+the Image must be patched before compression.
+
+Either way `.kpm` loading requires `CONFIG_KALLSYMS=y`, since the runtime
+resolves kernel functions by name; both paths check for it rather than producing
+a kernel that fails on the device.
 
 ```bash
 bash scripts/build-kpm.sh kpms/nbdemo     # -> dist/kpm/nbdemo.kpm
 cd manager && ./gradlew :app:assembleDebug
 ```
 
-The app needs root, because it runs a small static `kpctl` binary through `su` to
-issue KernelPatch's supercall (syscall 45). The superkey must match the one the
-image was patched with. See [manager/README.md](manager/README.md).
-
-`.kpm` loading requires `CONFIG_KALLSYMS=y` on the target kernel, since the
-runtime resolves kernel functions by name; the patch script checks for it before
-patching rather than producing an image that hangs later.
+See [manager/README.md](manager/README.md) for the app.
 
 ## Build and test in Codespaces
 

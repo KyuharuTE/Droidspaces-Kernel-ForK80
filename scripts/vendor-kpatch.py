@@ -278,6 +278,40 @@ def main() -> None:
     # object directory or Kbuild will not descend into it.
     if "obj-$(CONFIG_KP_LKM)" not in kbuild:
         kbuild = "obj-$(CONFIG_KP_LKM) += kernelpatch.o\n\n" + kbuild
+
+    # --- rename symbols that collide with the kernel -----------------------
+    #
+    # These sources were written to be appended to a kernel image as a
+    # self-contained blob, so they define names the kernel already uses:
+    #
+    #   kpm/module.c:615      `modules`       vs kernel/module/main.c:74
+    #   infra/sha256.c:98...  `sha256_update` vs lib/crypto/sha256.c:124
+    #                                        `sha256_final`, `sha256_init`
+    #
+    # Linked into vmlinux, the link stops with duplicate symbols. Renaming the
+    # colliding definitions in the vendored copies is enough; the original three
+    # are the only ones the kernel defines too, and doing it here keeps the
+    # change visible instead of hidden in compiler flags.
+    renames = {
+        dest / "kpm/module.c": [(r"\bmodules\b", "kp_modules")],
+        dest / "infra/sha256.c": [
+            (r"\bsha256_transform\b", "kp_sha256_transform"),
+            (r"\bsha256_init\b", "kp_sha256_init"),
+            (r"\bsha256_update\b", "kp_sha256_update"),
+            (r"\bsha256_final\b", "kp_sha256_final"),
+        ],
+    }
+    for path, subs in renames.items():
+        if not path.is_file():
+            continue
+        text = path.read_text(encoding="utf-8")
+        before = text
+        for pattern, repl in subs:
+            text = re.sub(pattern, repl, text)
+        if text != before:
+            path.write_text(text, encoding="utf-8")
+            info(f"Renamed kernel-colliding symbols in {path.relative_to(dest)}")
+
     (dest / "Kbuild").write_text(kbuild, encoding="utf-8")
 
     # --- register with the kernel build -----------------------------------
