@@ -34,14 +34,17 @@ SPDX-License-Identifier: GPL-2.0-or-later
 import json
 import os
 import re
+import shutil
+import subprocess
 import sys
+import tempfile
 import urllib.request
 from pathlib import Path
 
 KP_REPO = "bmax121/KernelPatch"
 KP_REF = os.environ.get("KP_REF", "main")
-API = "https://api.github.com/repos"
-RAW = "https://raw.githubusercontent.com"
+KP_URL = f"https://github.com/{KP_REPO}.git"
+API = f"https://api.github.com/repos/{KP_REPO}"
 
 # Auth replacement injected into kp_supercall_handler.
 # Upstream logic (lkm/supercall/supercall.c):
@@ -86,28 +89,48 @@ def info(msg: str) -> None:
     print(f"\n[INFO] {msg}")
 
 
-def fetch(url: str, timeout: int = 60) -> bytes:
-    for attempt in range(3):
-        try:
-            with urllib.request.urlopen(url, timeout=timeout) as r:
-                return r.read()
-        except Exception as exc:  # noqa: BLE001 - surfaced to the user either way
-            if attempt == 2:
-                raise
-            print(f"  retry ({exc})")
-    raise RuntimeError("unreachable")
+def fetch_repo(dest: Path) -> Path:
+    """Shallow clone KernelPatch.
+
+    The contents API is used by an earlier version of this script and hits the
+    60-requests-per-hour anonymous limit immediately: one request per directory
+    plus one per file, and this tree has well over a hundred files. A shallow
+    clone is a single transfer and has no such limit.
+    """
+    if dest.is_dir() and (dest / ".git").is_dir():
+        subprocess.run(
+            ["git", "-C", str(dest), "fetch", "--depth", "1", "origin", KP_REF],
+            check=True,
+            capture_output=True,
+        )
+        subprocess.run(
+            ["git", "-C", str(dest), "checkout", "--force", "FETCH_HEAD"],
+            check=True,
+            capture_output=True,
+        )
+        return dest
+
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    subprocess.run(
+        ["git", "clone", "--depth", "1", "--branch", KP_REF, KP_URL, str(dest)],
+        check=True,
+        capture_output=True,
+    )
+    return dest
 
 
-def list_tree(path: str) -> list[tuple[str, int]]:
-    """Recursively list a directory through the contents API."""
-    data = json.loads(fetch(f"{API}/{KP_REPO}/contents/{path}?ref={KP_REF}"))
-    out: list[tuple[str, int]] = []
-    for entry in data:
-        if entry["type"] == "dir":
-            out.extend(list_tree(entry["path"]))
-        else:
-            out.append((entry["path"], entry["size"]))
-    return out
+def copy_tree(src: Path, dst: Path) -> int:
+    """Copy a directory tree, returning the number of files copied."""
+    count = 0
+    for path in sorted(src.rglob("*")):
+        if not path.is_file():
+            continue
+        rel = path.relative_to(src)
+        target = dst / rel
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(path, target)
+        count += 1
+    return count
 
 
 def rewrite_supercall(source: bytes, superkey: str) -> bytes:
@@ -193,49 +216,52 @@ def main() -> None:
     dest = kernel_root / "drivers/kpatch"
     info(f"Vendoring {KP_REPO}@{KP_REF} into {dest}")
 
-    # --- sources -----------------------------------------------------------
-    lkm_files = list_tree("lkm")
-    info(f"{len(lkm_files)} files from lkm/")
-    (dest / "kpinclude").mkdir(parents=True, exist_ok=True)
+    # One shallow clone, then copy everything locally. See fetch_repo for why.
+    workdir = Path(tempfile.mkdtemp(prefix="kpatch-vendor-"))
+    try:
+        src_root = fetch_repo(workdir / "KernelPatch")
+        info(f"Cloned {KP_REPO}")
 
-    for path, _size in lkm_files:
-        rel = path[len("lkm/") :]
-        target = dest / rel
-        target.parent.mkdir(parents=True, exist_ok=True)
-        data = fetch(f"{RAW}/{KP_REPO}/{KP_REF}/{path}")
-        if rel == "supercall/supercall.c":
-            data = rewrite_supercall(data, superkey)
-            info("Rewrote supercall.c to authorise by superkey")
-        target.write_bytes(data)
+        # --- sources -------------------------------------------------------
+        dest.mkdir(parents=True, exist_ok=True)
+        lkm_src = src_root / "lkm"
+        if not lkm_src.is_dir():
+            die(f"no lkm/ directory in the clone at {src_root}")
+        count = copy_tree(lkm_src, dest)
+        info(f"{count} files from lkm/")
 
-    # --- headers the Kbuild reaches for -----------------------------------
-    # Kbuild uses $(src)/../kernel/{include,patch/include}/..., so mirror that
-    # layout under kpinclude/ and rewrite the paths below.
-    for path, _size in list_tree("kernel/include") + list_tree("kernel/patch/include"):
-        rel = path[len("kernel/") :]
-        target = dest / "kpinclude" / rel
-        target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_bytes(fetch(f"{RAW}/{KP_REPO}/{KP_REF}/{path}"))
+        # Authorisation is a superkey here, not an APatch manager uid.
+        supercall = dest / "supercall/supercall.c"
+        supercall.write_bytes(rewrite_supercall(supercall.read_bytes(), superkey))
+        info("Rewrote supercall.c to authorise by superkey")
 
-    # hook/hook_engine.c #includes ../../kernel/base/hook.c literally, so that
-    # translation unit needs the base/ sources too. Vendor the directory and
-    # repoint the include rather than copying a file out of its own tree.
-    base_files = list_tree("kernel/base")
-    info(f"{len(base_files)} files from kernel/base (hook_engine includes one directly)")
-    for path, _size in base_files:
-        rel = path[len("kernel/") :]
-        target = dest / "kpinclude" / rel
-        target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_bytes(fetch(f"{RAW}/{KP_REPO}/{KP_REF}/{path}"))
+        # --- headers and base sources the build reaches for -----------------
+        #
+        # The Kbuild points at ../kernel/{include,patch/include} and
+        # hook/hook_engine.c #includes ../../kernel/base/hook.c literally, so
+        # all three trees are needed. Mirror them under kpinclude/ and repoint
+        # the two references.
+        kpinc = dest / "kpinclude"
+        kpinc.mkdir(parents=True, exist_ok=True)
+        for sub in ("include", "patch/include", "base"):
+            src = src_root / "kernel" / sub
+            if not src.is_dir():
+                die(f"missing kernel/{sub} in the clone")
+            n = copy_tree(src, kpinc / sub)
+            info(f"{n} files from kernel/{sub}")
 
-    hook_engine = dest / "hook/hook_engine.c"
-    text = hook_engine.read_text(encoding="utf-8")
-    if "../../kernel/base/" in text:
-        text = text.replace("../../kernel/base/", "../../kpinclude/base/")
-        hook_engine.write_text(text, encoding="utf-8")
-        info("Repointed hook_engine.c at the vendored kernel/base")
+        hook_engine = dest / "hook/hook_engine.c"
+        text = hook_engine.read_text(encoding="utf-8")
+        if "../../kernel/base/" in text:
+            hook_engine.write_text(
+                text.replace("../../kernel/base/", "../../kpinclude/base/"),
+                encoding="utf-8",
+            )
+            info("Repointed hook_engine.c at the vendored kernel/base")
 
-    (dest / "version").write_bytes(fetch(f"{RAW}/{KP_REPO}/{KP_REF}/version"))
+        shutil.copyfile(src_root / "version", dest / "version")
+    finally:
+        shutil.rmtree(workdir, ignore_errors=True)
 
     # --- rewrite the Kbuild include paths ---------------------------------
     kbuild = (dest / "Kbuild").read_text(encoding="utf-8")
