@@ -12,6 +12,17 @@ set -euo pipefail
 
 IMAGE="${IMAGE:?IMAGE must point at the built Image}"
 OUT_ZIP="${OUT_ZIP:?OUT_ZIP must be the output zip path}"
+# Absolute from the start. The zip step runs inside a subshell that cd's into the
+# AnyKernel3 directory, so a relative OUT_ZIP would resolve there and the archive
+# would quietly land somewhere nobody looks.
+case "$OUT_ZIP" in
+    /*) ;;
+    *) OUT_ZIP="$PWD/$OUT_ZIP" ;;
+esac
+case "$IMAGE" in
+    /*) ;;
+    *) IMAGE="$PWD/$IMAGE" ;;
+esac
 DEVICE_CODENAME="${DEVICE_CODENAME:-zorn}"
 KERNEL_STRING="${KERNEL_STRING:-Droidspaces}"
 RUNNER_TEMP="${RUNNER_TEMP:-/tmp}"
