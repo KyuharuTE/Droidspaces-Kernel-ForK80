@@ -95,9 +95,45 @@ before changing the protected-exports list.
 scripts/codespace-build.sh             Codespace setup, build, package, checks
 scripts/fix-tree.py            mandatory ABI fix, anchor-based
 scripts/build-kernel.sh                configure and compile
+scripts/kpm-patch-image.sh             add KernelPatch so the kernel loads .kpm
+scripts/build-kpm.sh                   build a .kpm module from a source dir
 scripts/package-anykernel3.sh          wrap Image into a flashable zip
 kernel-configs/droidspaces-gki.config  the Droidspaces option set
+kpms/nbdemo/                           example KPM
+manager/                               Android app that loads and manages KPMs
 ```
+
+## Loading .kpm modules
+
+A `.kpm` is not a kernel module and not a kernel config option. It is an arm64
+ELF relocatable object that a runtime maps into kernel space, and that runtime is
+KernelPatch, which is a **binary patch** of the kernel image: `kptools` appends a
+payload (`kpimg`), redirects `primary_entry` to it, and fixes the arm64 header.
+Nothing in the kernel source changes, no exported symbol moves, and the kABI is
+untouched, so the stock vendor modules keep loading.
+
+```bash
+export SUPERKEY='choose-a-key'
+bash scripts/kpm-patch-image.sh        # out/arch/arm64/boot/Image -> dist/Image.kp
+```
+
+`dist/Image.kp` replaces `Image` as the AnyKernel3 payload. Package it the usual
+way; the packaging script gzips whatever it is given.
+
+Then build a module and install the manager:
+
+```bash
+bash scripts/build-kpm.sh kpms/nbdemo     # -> dist/kpm/nbdemo.kpm
+cd manager && ./gradlew :app:assembleDebug
+```
+
+The app needs root, because it runs a small static `kpctl` binary through `su` to
+issue KernelPatch's supercall (syscall 45). The superkey must match the one the
+image was patched with. See [manager/README.md](manager/README.md).
+
+`.kpm` loading requires `CONFIG_KALLSYMS=y` on the target kernel, since the
+runtime resolves kernel functions by name; the patch script checks for it before
+patching rather than producing an image that hangs later.
 
 ## Build and test in Codespaces
 
