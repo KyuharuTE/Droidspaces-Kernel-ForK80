@@ -300,6 +300,20 @@ def main() -> None:
             (r"\bsha256_update\b", "kp_sha256_update"),
             (r"\bsha256_final\b", "kp_sha256_final"),
         ],
+        # The header declares them and the caller uses them, so renaming only
+        # the definitions turns a duplicate into an undefined symbol.
+        dest / "include/sha256.h": [
+            (r"\bsha256_init\b", "kp_sha256_init"),
+            (r"\bsha256_update\b", "kp_sha256_update"),
+            (r"\bsha256_final\b", "kp_sha256_final"),
+            (r"\bsha256_transform\b", "kp_sha256_transform"),
+        ],
+        dest / "manager/apk_sign.c": [
+            (r"\bsha256_init\b", "kp_sha256_init"),
+            (r"\bsha256_update\b", "kp_sha256_update"),
+            (r"\bsha256_final\b", "kp_sha256_final"),
+            (r"\bsha256_transform\b", "kp_sha256_transform"),
+        ],
     }
     for path, subs in renames.items():
         if not path.is_file():
