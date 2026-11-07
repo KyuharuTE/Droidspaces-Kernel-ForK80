@@ -138,11 +138,20 @@ def rewrite_supercall(source: bytes, superkey: str) -> bytes:
         "",
         text,
     )
+    # This one references `manager` and `uid`, both of which the replacement
+    # above removed, so it has to go too or the file will not compile.
     text = re.sub(
-        r"\tif \(!manager && cmd == SUPERCALL_SU_PROFILE\)[^\n]*\n"
-        r"\t\treturn -EPERM;\n",
+        r"\tif \(!manager && cmd == SUPERCALL_SU_PROFILE\)[^\n]*\r?\n"
+        r"\t\treturn -EPERM;\r?\n",
         "",
         text,
+    )
+    # Upstream reads the caller uid for the UID gate. With the gate gone the
+    # variable is still declared at the top of the handler, so silence the
+    # unused warning instead of leaving a warning in the middle of the build.
+    text = text.replace(
+        "\tuint32_t uid = from_kuid(current_user_ns(), current_uid());",
+        "\tuint32_t uid = from_kuid(current_user_ns(), current_uid());\n\t(void)uid;",
     )
 
     # Declare the compiled-in key and its length bound.
@@ -242,13 +251,20 @@ def main() -> None:
     kconfig = (dest / "Kconfig").read_text(encoding="utf-8")
     kconfig = kconfig.replace("depends on MODULES && ARM64", "depends on ARM64")
     kconfig = kconfig.replace("default n", "default y")
-    kconfig = kconfig.replace(
-        "KernelPatch as a loadable kernel module (DDK-built .ko) instead of a",
-        "KernelPatch built into the kernel image instead of a patched boot image,",
-    )
-    kconfig = kconfig.replace(
-        "Build with: CONFIG_KP_LKM=m",
-        "Vendored by scripts/vendor-kpatch.py. Builds as KP_LKM=y.",
+    kconfig = kconfig.replace("tristate ", "bool ")
+    # Rewrite the whole help body: upstream's describes a DDK-built .ko and
+    # APatch-uid authentication, neither of which is true here.
+    kconfig = re.sub(
+        r"\thelp\n(?:\t  .*\n)+",
+        "\thelp\n"
+        "\t  KernelPatch built into the kernel image instead of a patched boot\n"
+        "\t  image. Provides the supercall channel on syscall 45 (truncate), the\n"
+        "\t  inline hook engine and the KPM loader, so .kpm modules can be loaded\n"
+        "\t  at runtime.\n"
+        "\t  Authenticates by superkey compiled in at vendor time, not by\n"
+        "\t  manager uid. Vendored by scripts/vendor-kpatch.py; build with\n"
+        "\t  CONFIG_KP_LKM=y.\n",
+        kconfig,
     )
     (dest / "Kconfig").write_text(kconfig, encoding="utf-8")
 
